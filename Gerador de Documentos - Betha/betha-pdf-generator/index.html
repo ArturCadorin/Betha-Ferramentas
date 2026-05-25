@@ -13,7 +13,7 @@
 
   <nav class="navbar">
     <div class="nav-brand">
-      <img src="../Logo Betha.png" alt="Betha" class="nav-logo">
+      <img src="assets/Logo-betha.png" alt="Betha" class="nav-logo">
       <div class="nav-brand-text">
         <span class="nav-title">Doc Generator</span>
         <span class="nav-subtitle">Betha Sistemas</span>
@@ -29,11 +29,11 @@
     <div class="hero-content">
       <div class="hero-badge">Gerador de Documentos</div>
       <h1>Documentações <span class="hero-highlight">padronizadas</span><br>em segundos</h1>
-      <p>Crie manuais e guias passo a passo com o padrão visual<br><strong>Betha Sistemas</strong>, prontos para distribuição.</p>
+      <p>Crie manuais, registros e guias técnicos com o padrão visual<br><strong>Betha Sistemas</strong>, prontos para distribuição.</p>
       <div class="hero-pills">
-        <span class="pill">✓ Templates profissionais</span>
+        <span class="pill">✓ 3 tipos de documento</span>
+        <span class="pill">✓ Prévia em tempo real</span>
         <span class="pill">✓ Export PDF</span>
-        <span class="pill">✓ Imagens e alertas</span>
       </div>
     </div>
     <div class="hero-mockup">
@@ -59,6 +59,156 @@
 
   <main class="main-container">
 
+    <!-- Tipo de Documento -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </div>
+          <div>
+            <h2>Tipo de Documento</h2>
+            <p class="card-desc">Selecione o formato — a prévia ao lado mostra o layout gerado</p>
+          </div>
+        </div>
+      </div>
+      <div class="type-selector">
+
+        <!-- Guia Passo a Passo -->
+        <div class="type-option active" data-type="guide">
+          <div class="type-option-top">
+            <div class="type-option-icon">📋</div>
+            <div class="type-option-text">
+              <div class="type-option-name">Guia Passo a Passo</div>
+              <div class="type-option-desc">Orientações sequenciais com passos numerados, alertas e capturas de tela para usuários do sistema</div>
+            </div>
+            <div class="type-check-mark">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="doc-preview">
+            <div class="dp-hdr dp-hdr-blue">
+              <div class="dp-logo"></div>
+              <div class="dp-hlines">
+                <div class="dp-l dp-bold dp-w65"></div>
+                <div class="dp-l dp-fade dp-w40"></div>
+              </div>
+            </div>
+            <div class="dp-body">
+              <div class="dp-section-row">
+                <div class="dp-bar dp-bar-blue"></div>
+                <div class="dp-l dp-w50 dp-colored-blue"></div>
+              </div>
+              <div class="dp-step-row">
+                <div class="dp-circle dp-circle-blue">1</div>
+                <div class="dp-slines"><div class="dp-l dp-w80"></div><div class="dp-l dp-fade dp-w55"></div></div>
+              </div>
+              <div class="dp-step-row">
+                <div class="dp-circle dp-circle-blue">2</div>
+                <div class="dp-slines"><div class="dp-l dp-w65"></div></div>
+              </div>
+              <div class="dp-alert-strip dp-warn-strip"></div>
+              <div class="dp-step-row">
+                <div class="dp-circle dp-circle-blue">3</div>
+                <div class="dp-slines"><div class="dp-l dp-w70"></div></div>
+              </div>
+            </div>
+            <div class="dp-footer"></div>
+          </div>
+        </div>
+
+        <!-- Registro de Alterações -->
+        <div class="type-option" data-type="changelog">
+          <div class="type-option-top">
+            <div class="type-option-icon">📝</div>
+            <div class="type-option-text">
+              <div class="type-option-name">Registro de Alterações</div>
+              <div class="type-option-desc">Histórico de mudanças em formato tabular com versão, data e tipo de cada alteração realizada</div>
+            </div>
+            <div class="type-check-mark">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="doc-preview">
+            <div class="dp-hdr dp-hdr-blue">
+              <div class="dp-logo"></div>
+              <div class="dp-hlines">
+                <div class="dp-l dp-fade dp-w35" style="height:3px;margin-bottom:2px"></div>
+                <div class="dp-l dp-bold dp-w60"></div>
+              </div>
+            </div>
+            <div class="dp-body">
+              <div class="dp-table">
+                <div class="dp-table-hrow">
+                  <span>Versão</span><span>Data</span><span>Tipo</span><span class="dp-flex1">Descrição</span>
+                </div>
+                <div class="dp-table-drow">
+                  <span class="dp-mono">2.1</span>
+                  <span class="dp-mono dp-dim">──────</span>
+                  <span class="dp-badge dp-bdg-green">Adição</span>
+                  <span class="dp-flex1"><div class="dp-l dp-w85"></div></span>
+                </div>
+                <div class="dp-table-drow dp-row-alt">
+                  <span class="dp-mono">2.0</span>
+                  <span class="dp-mono dp-dim">──────</span>
+                  <span class="dp-badge dp-bdg-blue">Correção</span>
+                  <span class="dp-flex1"><div class="dp-l dp-w75"></div></span>
+                </div>
+                <div class="dp-table-drow">
+                  <span class="dp-mono">1.9</span>
+                  <span class="dp-mono dp-dim">──────</span>
+                  <span class="dp-badge dp-bdg-orange">Alteração</span>
+                  <span class="dp-flex1"><div class="dp-l dp-w80"></div></span>
+                </div>
+              </div>
+            </div>
+            <div class="dp-footer"></div>
+          </div>
+        </div>
+
+        <!-- Guia de Orientações Técnicas -->
+        <div class="type-option" data-type="technical">
+          <div class="type-option-top">
+            <div class="type-option-icon">⚙️</div>
+            <div class="type-option-text">
+              <div class="type-option-name">Guia de Orientações Técnicas</div>
+              <div class="type-option-desc">Documentação técnica com blocos de código, notas e avisos para equipes de desenvolvimento e suporte</div>
+            </div>
+            <div class="type-check-mark">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="doc-preview">
+            <div class="dp-hdr dp-hdr-dark">
+              <div class="dp-logo"></div>
+              <div class="dp-hlines">
+                <div class="dp-l dp-bold dp-w65 dp-on-dark"></div>
+                <div class="dp-l dp-fade dp-w40 dp-on-dark-dim"></div>
+              </div>
+            </div>
+            <div class="dp-body">
+              <div class="dp-section-row">
+                <div class="dp-bar dp-bar-teal"></div>
+                <div class="dp-l dp-w50 dp-colored-teal"></div>
+              </div>
+              <div class="dp-para">
+                <div class="dp-l dp-w90"></div>
+                <div class="dp-l dp-fade dp-w75"></div>
+              </div>
+              <div class="dp-code-block">
+                <div class="dp-cl dp-w60"></div>
+                <div class="dp-cl dp-w80"></div>
+                <div class="dp-cl dp-w45"></div>
+              </div>
+              <div class="dp-alert-strip dp-note-strip"></div>
+            </div>
+            <div class="dp-footer"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
     <!-- Informações do Documento -->
     <section class="card">
       <div class="card-header">
@@ -82,8 +232,8 @@
           <input type="text" id="doc-module" placeholder="Ex: Folha de Pagamento" autocomplete="off">
         </div>
         <div class="form-group">
-          <label for="doc-version">Versão</label>
-          <input type="text" id="doc-version" placeholder="Ex: 1.0" autocomplete="off">
+          <label for="doc-ticket">Número do Chamado</label>
+          <input type="text" id="doc-ticket" placeholder="Ex: CHM-12345" autocomplete="off">
         </div>
         <div class="form-group">
           <label for="doc-author">Responsável</label>
@@ -96,16 +246,16 @@
       </div>
     </section>
 
-    <!-- Seções e Passos -->
-    <section class="card">
+    <!-- Seções e Passos (Guide + Technical) -->
+    <section class="card" id="sections-card">
       <div class="card-header">
         <div class="card-header-left">
           <div class="card-icon">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
           </div>
           <div>
-            <h2>Seções e Passos</h2>
-            <p class="card-desc">Organize o conteúdo em seções com passos numerados</p>
+            <h2 id="sections-card-title">Seções e Passos</h2>
+            <p class="card-desc" id="sections-card-desc">Organize o conteúdo em seções com passos numerados</p>
           </div>
         </div>
         <button class="btn btn-outline" id="btn-add-section">
@@ -118,6 +268,32 @@
           <div class="empty-icon">📋</div>
           <p>Nenhuma seção criada ainda.</p>
           <p class="empty-hint">Clique em "Adicionar Seção" para começar.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Entradas de Alteração (Changelog only) -->
+    <section class="card" id="changelog-card" style="display:none">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+          <div>
+            <h2>Entradas de Alteração</h2>
+            <p class="card-desc">Registre cada mudança com versão, data e tipo</p>
+          </div>
+        </div>
+        <button class="btn btn-outline" id="btn-add-entry">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar Entrada
+        </button>
+      </div>
+      <div id="entries-container">
+        <div class="empty-state" id="empty-entries">
+          <div class="empty-icon">📝</div>
+          <p>Nenhuma entrada criada ainda.</p>
+          <p class="empty-hint">Clique em "Adicionar Entrada" para começar.</p>
         </div>
       </div>
     </section>
@@ -180,7 +356,7 @@
   </main>
 
   <footer class="site-footer">
-    <img src="../Logo Betha.png" alt="Betha" class="footer-logo">
+    <img src="assets/Logo-betha.png" alt="Betha" class="footer-logo">
     <p>Betha Doc Generator &mdash; Padronização de documentos Betha Sistemas</p>
   </footer>
 

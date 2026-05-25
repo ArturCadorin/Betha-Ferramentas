@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ' *)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const js=fs.readFileSync\\('c:/Users/artur.cadorin/Desktop/ARTUR - FERRAMENTAS BETHA/betha-pdf-generator/app.js','utf8'\\);try{new Function\\(js\\);console.log\\('OK'\\)}catch\\(e\\){console.error\\('ERRO:',e.message\\)}\")",
+      "Bash(node -e \"const fs=require\\('fs'\\);const b=fs.readFileSync\\('c:/Users/artur.cadorin/Desktop/ARTUR - FERRAMENTAS BETHA/betha-pdf-generator/assets/Logo-betha.png'\\);console.log\\('bytes:',b.length,'kb:',Math.round\\(b.length/1024\\)\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\);const b=fs.readFileSync\\('c:/Users/artur.cadorin/Desktop/ARTUR - FERRAMENTAS BETHA/betha-pdf-generator/assets/Logo-betha.png'\\);console.log\\('data:image/png;base64,'+b.toString\\('base64'\\)\\)\")"
+    ]
+  }
+}
