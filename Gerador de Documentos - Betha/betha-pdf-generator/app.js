@@ -286,7 +286,15 @@ function addEntry() {
     <div class="entry-top-row">
       <div class="entry-field-group">
         <label>Data</label>
-        <input type="date" class="entry-date">
+        <div class="date-input-wrap">
+          <input type="date" class="entry-date">
+          <svg class="date-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
       </div>
       <div class="entry-field-group entry-type-group">
         <label>Tipo</label>
@@ -348,6 +356,7 @@ function removeEntry(el) {
 function collectData() {
   const doc = {
     title:   document.getElementById('doc-title').value.trim(),
+    entity:  document.getElementById('doc-entity').value.trim(),
     module:  document.getElementById('doc-module').value.trim(),
     ticket:  document.getElementById('doc-ticket').value.trim(),
     author:  document.getElementById('doc-author').value.trim(),
@@ -456,18 +465,18 @@ async function buildSectionedDocPDF(data) {
     ACCENT:    [14, 165, 133],
     HEADER_LABEL: 'DOCUMENTAÇÃO TÉCNICA',
     ALERTS: {
-      info:    { fill: [240, 253, 250], border: [13, 148, 136], label: '📌 Nota' },
-      warning: { fill: [255, 251, 235], border: [217, 119, 6],  label: '⚠ Aviso' },
-      danger:  { fill: [255, 247, 237], border: [234, 88, 12],  label: '⚡ Importante' },
+      info:    { fill: [243, 253, 251], border: [13, 148, 136], label: 'Nota' },
+      warning: { fill: [255, 253, 242], border: [217, 119, 6],  label: 'Aviso' },
+      danger:  { fill: [255, 249, 240], border: [234, 88, 12],  label: 'Importante' },
     },
   } : {
     HEADER_BG: [61, 90, 241],
     ACCENT:    [61, 90, 241],
     HEADER_LABEL: null,
     ALERTS: {
-      info:    { fill: [239, 246, 255], border: [37, 99, 235],  label: '💡 Dica' },
-      warning: { fill: [255, 251, 235], border: [217, 119, 6],  label: '⚠ Atenção' },
-      danger:  { fill: [254, 242, 242], border: [220, 38, 38],  label: '🚨 Crítico' },
+      info:    { fill: [243, 248, 255], border: [37, 99, 235],  label: 'Dica' },
+      warning: { fill: [255, 253, 242], border: [217, 119, 6],  label: 'Atencao'  },
+      danger:  { fill: [255, 245, 245], border: [220, 38, 38],  label: 'Critico'  },
     },
   };
 
@@ -506,7 +515,7 @@ async function buildSectionedDocPDF(data) {
 
   function drawMainHeader() {
     setColor(PALETTE.HEADER_BG, 'fill');
-    doc.rect(0, 0, PW, 42, 'F');
+    doc.rect(0, 0, PW, 52, 'F');
 
     if (data.settings.showLogo && logoBase64) {
       doc.addImage(logoBase64, 'PNG', ML, 14, 14, 14);
@@ -527,21 +536,32 @@ async function buildSectionedDocPDF(data) {
     const titleLines = wrappedLines(data.doc.title || 'Documento', CW - 22, 16);
     doc.text(titleLines, xText, titleY);
 
-    const metaParts = [
+    const entityPart = data.doc.entity ? `Entidade: ${data.doc.entity}` : null;
+    const row2Parts  = [
       data.doc.module  && `Módulo: ${data.doc.module}`,
       data.doc.author  && `Responsável: ${data.doc.author}`,
       data.doc.date    && `Data: ${formatDate(data.doc.date)}`,
       data.doc.ticket  && `Chamado: ${data.doc.ticket}`,
     ].filter(Boolean);
 
-    if (metaParts.length) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      setColor([200, 210, 255], 'text');
-      doc.text(metaParts.join('   |   '), xText, 36, { maxWidth: CW - 22 });
+    if (entityPart || row2Parts.length) {
+      let metaY = Math.max(titleY + titleLines.length * lineHeight(16) + 4, 36);
+      if (entityPart) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        setColor([230, 235, 255], 'text');
+        doc.text(entityPart, xText, metaY);
+        metaY += 6;
+      }
+      if (row2Parts.length) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        setColor([190, 205, 250], 'text');
+        doc.text(row2Parts.join('   |   '), xText, metaY, { maxWidth: CW - 22 });
+      }
     }
 
-    y = 52;
+    y = 60;
   }
 
   function drawContinuationHeader() {
@@ -656,27 +676,35 @@ async function buildSectionedDocPDF(data) {
     const cfg = PALETTE.ALERTS[type];
     if (!cfg) return;
 
-    const lines = wrappedLines(text, CW - 22, 9);
-    const h = lines.length * lineHeight(9) + 10;
+    const lines = wrappedLines(text, CW - 26, 9);
+    const textH = lines.length * lineHeight(9);
+    const h     = textH + 14;
     ensureSpace(h + 4);
 
+    // Fundo sutil
     setColor(cfg.fill, 'fill');
-    doc.roundedRect(ML + 8, y, CW - 8, h, 2, 2, 'F');
+    doc.roundedRect(ML + 8, y, CW - 8, h, 2.5, 2.5, 'F');
 
+    // Borda esquerda fina
     setColor(cfg.border, 'fill');
-    doc.roundedRect(ML + 8, y, 2.5, h, 1, 1, 'F');
+    doc.roundedRect(ML + 8, y, 2, h, 1.5, 1.5, 'F');
 
-    setColor(cfg.border, 'text');
+    // Badge pill com o tipo
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.text(cfg.label, ML + 14, y + 6);
+    doc.setFontSize(6.5);
+    const pillW = doc.getTextWidth(cfg.label) + 8;
+    setColor(cfg.border, 'fill');
+    doc.roundedRect(ML + 13.5, y + 3.5, pillW, 5.2, 2, 2, 'F');
+    setColor(WHITE, 'text');
+    doc.text(cfg.label, ML + 13.5 + pillW / 2, y + 7.4, { align: 'center' });
 
-    setColor([55, 65, 81], 'text');
+    // Texto do alerta
+    setColor([75, 85, 99], 'text');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(lines, ML + 14, y + 11);
+    doc.text(lines, ML + 13.5, y + 12);
 
-    y += h + 4;
+    y += h + 3;
   }
 
   drawMainHeader();
@@ -737,7 +765,7 @@ async function buildChangelogDocPDF(data) {
 
   function drawMainHeader() {
     setColor(BLUE, 'fill');
-    doc.rect(0, 0, PW, 42, 'F');
+    doc.rect(0, 0, PW, 52, 'F');
 
     if (data.settings.showLogo && logoBase64) {
       doc.addImage(logoBase64, 'PNG', ML, 14, 14, 14);
@@ -756,21 +784,32 @@ async function buildChangelogDocPDF(data) {
     const titleLines = wrappedLines(data.doc.title || 'Documento', CW - 22, 15);
     doc.text(titleLines, xText, 21);
 
-    const metaParts = [
+    const entityPart = data.doc.entity ? `Entidade: ${data.doc.entity}` : null;
+    const row2Parts  = [
       data.doc.module  && `Módulo: ${data.doc.module}`,
       data.doc.author  && `Responsável: ${data.doc.author}`,
       data.doc.date    && `Data: ${formatDate(data.doc.date)}`,
       data.doc.ticket  && `Chamado: ${data.doc.ticket}`,
     ].filter(Boolean);
 
-    if (metaParts.length) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      setColor([200, 210, 255], 'text');
-      doc.text(metaParts.join('   |   '), xText, 36, { maxWidth: CW - 22 });
+    if (entityPart || row2Parts.length) {
+      let metaY = Math.max(21 + titleLines.length * lineHeight(15) + 4, 36);
+      if (entityPart) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        setColor([230, 235, 255], 'text');
+        doc.text(entityPart, xText, metaY);
+        metaY += 6;
+      }
+      if (row2Parts.length) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        setColor([190, 205, 250], 'text');
+        doc.text(row2Parts.join('   |   '), xText, metaY, { maxWidth: CW - 22 });
+      }
     }
 
-    y = 52;
+    y = 60;
   }
 
   function drawContinuationHeader() {
@@ -809,20 +848,24 @@ async function buildChangelogDocPDF(data) {
   }
 
   function drawTableHeader() {
-    ensureSpace(9);
+    ensureSpace(11);
     setColor(BLUE, 'fill');
-    doc.rect(ML, y, CW, 8, 'F');
+    doc.rect(ML, y, CW, 11, 'F');
 
     setColor(WHITE, 'text');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setFontSize(7.5);
-    doc.text('TIPO DE',   COL.date.x + 2, y + 3.8);
-    doc.text('OPERAÇÃO',  COL.date.x + 2, y + 7.2);
-    doc.setFontSize(8);
-    doc.text('DESCRIÇÃO', COL.content.x + 2, y + 5.5);
 
-    y += 8;
+    // "TIPO DE OPERAÇÃO" centralizado na coluna esquerda
+    const dateColCx = COL.date.x + COL.date.w / 2;
+    doc.setFontSize(7.5);
+    doc.text('TIPO DE',  dateColCx, y + 4,   { align: 'center' });
+    doc.text('OPERAÇÃO', dateColCx, y + 7.8,  { align: 'center' });
+
+    // "DESCRIÇÃO" alinhado ao início da coluna de conteúdo
+    doc.setFontSize(8);
+    doc.text('DESCRIÇÃO', COL.content.x + 3, y + 6.5);
+
+    y += 11;
 
     setColor(BORDER, 'draw');
     doc.setLineWidth(0.2);

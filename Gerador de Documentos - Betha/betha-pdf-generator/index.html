@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Betha Doc Generator</title>
+  <title>Gerador de PDF - Betha Sistemas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
     <div class="nav-brand">
       <img src="assets/Logo-betha.png" alt="Betha" class="nav-logo">
       <div class="nav-brand-text">
-        <span class="nav-title">Doc Generator</span>
+        <span class="nav-title">Gerador de Documentos - Betha Sistemas</span>
         <span class="nav-subtitle">Betha Sistemas</span>
       </div>
     </div>
@@ -28,12 +28,12 @@
   <section class="hero">
     <div class="hero-content">
       <div class="hero-badge">Gerador de Documentos</div>
-      <h1>Documentações <span class="hero-highlight">padronizadas</span><br>em segundos</h1>
-      <p>Crie manuais, registros e guias técnicos com o padrão visual<br><strong>Betha Sistemas</strong>, prontos para distribuição.</p>
+      <h1>Documentações <span class="hero-highlight">padronizadas</span></h1>
+      <p>Crie manuais, registros e guias técnicos com o padrão visual <strong>Betha Sistemas</strong></p>
       <div class="hero-pills">
         <span class="pill">✓ 3 tipos de documento</span>
-        <span class="pill">✓ Prévia em tempo real</span>
-        <span class="pill">✓ Export PDF</span>
+        <span class="pill">✓ Padronização Betha</span>
+        <span class="pill">✓ Exportação em PDF</span>
       </div>
     </div>
     <div class="hero-mockup">
@@ -227,21 +227,33 @@
           <label for="doc-title">Título do Documento <span class="required">*</span></label>
           <input type="text" id="doc-title" placeholder="Ex: Como emitir relatório de folha de pagamento" autocomplete="off">
         </div>
+        <div class="form-group span-2">
+          <label for="doc-entity">Entidade</label>
+          <input type="text" id="doc-entity" placeholder="Ex: Prefeitura Municipal de Criciúma" autocomplete="off">
+        </div>
         <div class="form-group">
           <label for="doc-module">Módulo / Sistema</label>
           <input type="text" id="doc-module" placeholder="Ex: Folha de Pagamento" autocomplete="off">
         </div>
         <div class="form-group">
           <label for="doc-ticket">Número do Chamado</label>
-          <input type="text" id="doc-ticket" placeholder="Ex: CHM-12345" autocomplete="off">
+          <input type="text" id="doc-ticket" placeholder="Ex: BTHSC-12345" autocomplete="off">
         </div>
         <div class="form-group">
           <label for="doc-author">Responsável</label>
-          <input type="text" id="doc-author" placeholder="Ex: João Silva" autocomplete="off">
+          <input type="text" id="doc-author" placeholder="Ex: Artur Cadorin" autocomplete="off">
         </div>
         <div class="form-group">
           <label for="doc-date">Data</label>
-          <input type="date" id="doc-date">
+          <div class="date-input-wrap">
+            <input type="date" id="doc-date">
+            <svg class="date-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
         </div>
       </div>
     </section>
@@ -357,7 +369,7 @@
 
   <footer class="site-footer">
     <img src="assets/Logo-betha.png" alt="Betha" class="footer-logo">
-    <p>Betha Doc Generator &mdash; Padronização de documentos Betha Sistemas</p>
+    <p>Desenvolvido por: @artur.cadorin</p>
   </footer>
 
   <div class="toast" id="toast"></div>

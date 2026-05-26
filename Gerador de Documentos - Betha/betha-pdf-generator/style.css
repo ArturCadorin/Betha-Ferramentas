@@ -597,6 +597,46 @@ select:focus {
 input::placeholder,
 textarea::placeholder { color: #9CA3AF; }
 
+/* ── Date input – wrapper com ícone customizado ── */
+.date-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.date-input-wrap input[type="date"] {
+  color-scheme: light;
+  padding-right: 36px;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* Esconde o ícone nativo mas mantém área clicável */
+.date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0;
+  width: 36px;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Ícone SVG customizado */
+.date-icon {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: var(--primary);
+  opacity: 0.55;
+  transition: opacity .15s;
+  flex-shrink: 0;
+}
+
+.date-input-wrap:hover .date-icon,
+.date-input-wrap input:focus ~ .date-icon {
+  opacity: 1;
+}
+
 /* ── Toggles ── */
 .settings-grid {
   padding: 8px 24px 20px;
