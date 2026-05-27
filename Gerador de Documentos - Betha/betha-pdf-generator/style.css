@@ -1171,10 +1171,7 @@ textarea::placeholder { color: #9CA3AF; }
 }
 
 #op-conclusion {
-  resize: vertical;
   min-height: 100px;
-  font-size: 14px;
-  line-height: 1.6;
 }
 
 .op-sig-grid {
@@ -1236,3 +1233,166 @@ textarea::placeholder { color: #9CA3AF; }
 @media (max-width: 768px) {
   .op-sig-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Dark Mode ── */
+body { transition: background-color .2s, color .2s; }
+
+.btn-darkmode {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .15s, color .15s, background .15s;
+  flex-shrink: 0;
+}
+.btn-darkmode:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-faint); }
+.btn-darkmode .icon-sun { display: none; }
+body.dark .btn-darkmode .icon-moon { display: none; }
+body.dark .btn-darkmode .icon-sun  { display: block; }
+
+body.dark {
+  --bg:            #0D0F1A;
+  --white:         #151929;
+  --text:          #E2E8F0;
+  --text-muted:    #8892A4;
+  --border:        #252C42;
+  --primary-faint: #171C30;
+  --primary-light: #171C30;
+  color-scheme: dark;
+}
+
+body.dark .navbar            { background: #11152A; border-color: #252C42; }
+body.dark .card              { background: #151929; border-color: #252C42; }
+body.dark .card-header       { background: #151929; border-color: #252C42; }
+body.dark .card-icon         { background: #171C30; }
+body.dark label              { color: #E2E8F0; }
+body.dark .required          { color: #F87171; }
+
+body.dark input[type="text"],
+body.dark input[type="date"],
+body.dark textarea,
+body.dark select             { background: #0D0F1A; color: #E2E8F0; border-color: #252C42; }
+body.dark input::placeholder,
+body.dark textarea::placeholder { color: #3D4560; }
+
+body.dark .section-head,
+body.dark .op-section-head   { background: #171C30; border-color: #252C42; }
+body.dark .section-block,
+body.dark .op-section-block  { border-color: #252C42; }
+body.dark .section-block:focus-within,
+body.dark .op-section-block:focus-within { border-color: var(--primary); }
+
+body.dark .step-block        { background: #0D0F1A; border-color: #252C42; }
+body.dark .changelog-entry   { background: #0D0F1A; border-color: #252C42; }
+body.dark .changelog-entry:focus-within { border-color: var(--primary); }
+
+body.dark .type-option       { background: #151929; border-color: #252C42; }
+body.dark .type-option:hover { background: #171C30; border-color: var(--primary); }
+body.dark .type-option.active { background: #171C30; }
+body.dark .doc-preview       { box-shadow: 0 3px 10px rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.4); }
+body.dark .dp-l              { background: #3D4560; }
+body.dark .dp-table-drow     { background: #1A1F35; }
+body.dark .dp-table-drow.dp-row-alt { background: #151929; }
+
+body.dark .toggle-item       { border-color: #252C42; }
+body.dark .toggle-track      { background: #252C42; }
+
+body.dark .btn-ghost         { background: transparent; border-color: #252C42; color: #8892A4; }
+body.dark .btn-ghost:hover   { background: #171C30; color: #E2E8F0; }
+body.dark .btn-outline       { background: #151929; }
+body.dark .btn-outline:hover { background: #171C30; }
+body.dark .btn-icon          { background: #151929; border-color: #252C42; color: #8892A4; }
+body.dark .btn-icon:hover    { background: #171C30; border-color: var(--primary); color: var(--primary); }
+body.dark .btn-icon.danger:hover { border-color: #F87171; color: #F87171; background: #2D1414; }
+body.dark .btn-darkmode      { background: #151929; border-color: #252C42; color: #8892A4; }
+body.dark .btn-darkmode:hover { background: #171C30; border-color: var(--primary); color: var(--primary); }
+
+body.dark .site-footer       { background: #11152A; border-color: #252C42; }
+body.dark .op-extras-section + .op-extras-section { border-color: #252C42; }
+body.dark .empty-state       { color: #8892A4; }
+
+body.dark ::-webkit-scrollbar       { width: 7px; height: 7px; }
+body.dark ::-webkit-scrollbar-track { background: #0D0F1A; }
+body.dark ::-webkit-scrollbar-thumb { background: #252C42; border-radius: 4px; }
+body.dark ::-webkit-scrollbar-thumb:hover { background: #3D4560; }
+
+/* ── Rich Text (contenteditable) ── */
+.rich-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 9px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  line-height: 1.6;
+  cursor: text;
+  transition: border-color .15s, box-shadow .15s;
+  word-break: break-word;
+}
+
+.rich-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(61, 90, 241, .1);
+}
+
+.rich-textarea:empty::before {
+  content: attr(data-placeholder);
+  color: #9CA3AF;
+  pointer-events: none;
+  display: block;
+}
+
+body.dark .rich-textarea     { background: #0D0F1A; color: #E2E8F0; border-color: #252C42; }
+body.dark .rich-textarea:empty::before { color: #3D4560; }
+body.dark .rich-textarea:focus { border-color: var(--primary); }
+
+.rich-textarea b, .rich-textarea strong { font-weight: 700; }
+.rich-textarea i, .rich-textarea em     { font-style: italic; }
+
+/* Floating Rich Text Toolbar */
+.rte-float {
+  position: fixed;
+  z-index: 9999;
+  background: #1A1D2E;
+  border-radius: 7px;
+  padding: 4px 5px;
+  display: flex;
+  gap: 2px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s;
+  transform: translateY(-4px);
+}
+.rte-float.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+.rte-float-btn {
+  width: 30px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #E2E8F0;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .1s;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: -.3px;
+}
+.rte-float-btn:hover  { background: rgba(255,255,255,.13); }
+.rte-float-btn.active { background: rgba(61,90,241,.55); }
+.rte-float-sep { width: 1px; background: rgba(255,255,255,.15); margin: 4px 2px; }

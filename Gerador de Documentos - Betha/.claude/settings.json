@@ -3,7 +3,21 @@
     "allow": [
       "Bash(node --input-type=module)",
       "Bash(node -e \"require\\('fs'\\).readFileSync\\('app.js','utf8'\\)\")",
-      "Bash(node --check \"c:\\\\Users\\\\artur.cadorin\\\\Desktop\\\\Betha-Ferramentas\\\\Gerador de Documentos - Betha\\\\betha-pdf-generator\\\\app.js\")"
+      "Bash(node --check \"c:\\\\Users\\\\artur.cadorin\\\\Desktop\\\\Betha-Ferramentas\\\\Gerador de Documentos - Betha\\\\betha-pdf-generator\\\\app.js\")",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Header: substituir caixa/logo B por wordmark BETHA em texto azul fosco *)",
+      "Bash(node -e ' *)",
+      "Bash(git commit -m 'Header unificado + azuis foscos + titulo abaixo da linha *)",
+      "Bash(git commit -m 'Alinhar logo a margem esquerda + renomear coluna para TIPO *)",
+      "Bash(git commit -m 'Header: slogan ao lado da logo + meta mais proxima/maior *)",
+      "Bash(node --check \"c:/Users/artur.cadorin/Desktop/Betha-Ferramentas/Gerador de Documentos - Betha/betha-pdf-generator/app.js\")",
+      "Bash(git commit -m 'refactor: complete DOC_REGISTRY + shared PDF/Word helpers *)",
+      "Bash(git commit -m 'fix: corrigir acentuacao em todos os textos estaticos *)",
+      "Bash(git commit -m 'feat: novo tipo Relatorio Operacional \\(substitui Documentacao Tecnica\\) *)",
+      "Bash(git commit -m 'fix: assinaturas - remover campo cidade, usar entidade; renomear para Assinante Betha *)",
+      "Bash(git commit -m 'ui: remover secao hero - manter apenas o formulario *)",
+      "Bash(git commit -m 'ui: remover card de configuracoes do PDF *)",
+      "Bash(git commit -m 'ui: corrigir previa do Registro de Alteracoes \\(2 colunas: Tipo + Descricao\\) *)"
     ]
   }
 }

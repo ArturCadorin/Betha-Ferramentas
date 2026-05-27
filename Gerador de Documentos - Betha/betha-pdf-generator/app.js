@@ -192,12 +192,194 @@ function makeWordMetaTable(D, accentHex, items) {
   ];
 }
 
+// ── Dark mode ─────────────────────────────
+
+function initDarkMode() {
+  const btn = document.getElementById('btn-darkmode');
+  const isDark = localStorage.getItem('betha-theme') === 'dark';
+  document.body.classList.toggle('dark', isDark);
+  if (btn) btn.addEventListener('click', toggleDarkMode);
+}
+
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('betha-theme', isDark ? 'dark' : 'light');
+}
+
+// ── Rich text editing ─────────────────────
+
+// Parses innerHTML of a contenteditable div into segments [{text, bold, italic}]
+function parseRichHTMLSegments(html) {
+  if (!html) return [{ text: '', bold: false, italic: false }];
+  // Normalize: replace <br> with newline marker
+  const normalized = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<div>/gi, '\n')
+    .replace(/<\/div>/gi, '');
+  const segments = [];
+  const parser = new DOMParser();
+  const frag = parser.parseFromString(`<body>${normalized}</body>`, 'text/html').body;
+
+  function walk(node, bold, italic) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent;
+      if (text) segments.push({ text, bold, italic });
+      return;
+    }
+    const tag = node.nodeName.toUpperCase();
+    const b = bold  || tag === 'B' || tag === 'STRONG';
+    const i = italic || tag === 'I' || tag === 'EM';
+    node.childNodes.forEach(child => walk(child, b, i));
+  }
+  frag.childNodes.forEach(n => walk(n, false, false));
+  if (!segments.length) segments.push({ text: '', bold: false, italic: false });
+  return segments;
+}
+
+// Returns plain text from rich HTML (strip tags)
+function richHTMLToPlain(html) {
+  return parseRichHTMLSegments(html).map(s => s.text).join('');
+}
+
+// Wraps mixed-format segments into lines that fit maxW at given font size (jsPDF)
+function buildRichLines(doc, segments, maxW, size) {
+  const lines = [];
+  let curLine = [];
+  let curW = 0;
+
+  function flushLine() {
+    lines.push(curLine);
+    curLine = [];
+    curW = 0;
+  }
+
+  function segWidth(text, bold, italic) {
+    const style = bold && italic ? 'bolditalic' : bold ? 'bold' : italic ? 'italic' : 'normal';
+    doc.setFont('helvetica', style);
+    doc.setFontSize(size);
+    return doc.getTextWidth(text);
+  }
+
+  for (const seg of segments) {
+    const parts = seg.text.split('\n');
+    for (let pi = 0; pi < parts.length; pi++) {
+      if (pi > 0) flushLine();
+      const words = parts[pi].split(' ');
+      for (let wi = 0; wi < words.length; wi++) {
+        const word = (wi > 0 ? ' ' : '') + words[wi];
+        const ww = segWidth(word, seg.bold, seg.italic);
+        if (curW + ww > maxW && curLine.length > 0) {
+          flushLine();
+          const trimWord = words[wi];
+          const tw = segWidth(trimWord, seg.bold, seg.italic);
+          curLine.push({ text: trimWord, bold: seg.bold, italic: seg.italic });
+          curW = tw;
+        } else {
+          curLine.push({ text: word, bold: seg.bold, italic: seg.italic });
+          curW += ww;
+        }
+      }
+    }
+  }
+  if (curLine.length > 0) lines.push(curLine);
+  return lines;
+}
+
+// Draws rich text lines onto jsPDF canvas, returns final Y
+function drawRichLines(doc, lines, x, y, size) {
+  const lh = size * 0.3528 * 1.4;
+  for (const line of lines) {
+    let cx = x;
+    for (const seg of line) {
+      const style = seg.bold && seg.italic ? 'bolditalic' : seg.bold ? 'bold' : seg.italic ? 'italic' : 'normal';
+      doc.setFont('helvetica', style);
+      doc.setFontSize(size);
+      doc.text(seg.text, cx, y);
+      cx += doc.getTextWidth(seg.text);
+    }
+    y += lh;
+  }
+  return y;
+}
+
+// Converts innerHTML of a contenteditable div to an array of docx TextRun objects
+function htmlToWordRuns(D, html, opts = {}) {
+  const segments = parseRichHTMLSegments(html);
+  return segments.map(seg => new D.TextRun({
+    text: seg.text,
+    bold: seg.bold || opts.bold || false,
+    italics: seg.italic || opts.italics || false,
+    size: opts.size || 21,
+    color: opts.color || '1A1D2E',
+  }));
+}
+
+// Floating rich-text toolbar
+function initRichText() {
+  // Create floating toolbar
+  const toolbar = document.createElement('div');
+  toolbar.className = 'rte-float';
+  toolbar.id = 'rte-float';
+  toolbar.innerHTML = `
+    <button class="rte-float-btn" data-cmd="bold"    title="Negrito (Ctrl+B)"><b>B</b></button>
+    <div class="rte-float-sep"></div>
+    <button class="rte-float-btn" data-cmd="italic"  title="Itálico (Ctrl+I)"><i>I</i></button>
+  `;
+  document.body.appendChild(toolbar);
+
+  toolbar.addEventListener('mousedown', (e) => {
+    e.preventDefault(); // don't lose selection
+    const btn = e.target.closest('.rte-float-btn');
+    if (!btn) return;
+    document.execCommand(btn.dataset.cmd, false, null);
+    updateToolbarState();
+  });
+
+  // Show/hide toolbar based on selection within a .rich-textarea
+  document.addEventListener('selectionchange', () => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) {
+      toolbar.classList.remove('show');
+      return;
+    }
+    // Check if selection is inside a rich-textarea
+    const anchor = sel.anchorNode;
+    if (!anchor) { toolbar.classList.remove('show'); return; }
+    const el = anchor.nodeType === Node.TEXT_NODE ? anchor.parentElement : anchor;
+    if (!el.closest('.rich-textarea')) { toolbar.classList.remove('show'); return; }
+
+    // Position toolbar above the selection
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    toolbar.classList.add('show');
+    toolbar.style.top  = (rect.top  + window.scrollY - 46) + 'px';
+    toolbar.style.left = (rect.left + window.scrollX + rect.width / 2 - 42) + 'px';
+    updateToolbarState();
+  });
+
+  function updateToolbarState() {
+    toolbar.querySelectorAll('.rte-float-btn').forEach(btn => {
+      btn.classList.toggle('active', document.queryCommandState(btn.dataset.cmd));
+    });
+  }
+
+  // Keyboard shortcuts in all rich-textareas
+  document.addEventListener('keydown', (e) => {
+    const el = document.activeElement;
+    if (!el || !el.classList.contains('rich-textarea')) return;
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b') { e.preventDefault(); document.execCommand('bold',   false, null); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') { e.preventDefault(); document.execCommand('italic', false, null); }
+  });
+}
+
 // ── Init ──────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('doc-date').valueAsDate = new Date();
   loadLogo();
   addSection();
+  initDarkMode();
+  initRichText();
 
   document.getElementById('btn-add-section').addEventListener('click', addSection);
   document.getElementById('btn-add-entry').addEventListener('click', addEntry);
@@ -371,7 +553,7 @@ function addStep(sid) {
   el.innerHTML = `
     <div class="step-num">${num}</div>
     <div class="step-content">
-      <textarea class="step-text" placeholder="Descreva este passo com clareza..." rows="2"></textarea>
+      <div class="rich-textarea step-text" contenteditable="true" data-placeholder="Descreva este passo com clareza..."></div>
       <div class="step-opts">
         <select class="step-alert-select">${getAlertOptions()}</select>
         <button class="btn-icon btn-add-image" type="button">🖼 Imagem</button>
@@ -475,7 +657,7 @@ function addEntry() {
       </div>
       <div class="entry-bottom-row">
         <label>Descrição</label>
-        <textarea class="entry-desc" placeholder="Descreva a alteração realizada..." rows="2"></textarea>
+        <div class="rich-textarea entry-desc" contenteditable="true" data-placeholder="Descreva a alteração realizada..."></div>
       </div>
     </div>
   `;
@@ -617,7 +799,7 @@ function collectData() {
       entries.push({
         type:  el.querySelector('.entry-type').value,
         title: el.querySelector('.entry-title').value.trim(),
-        desc:  el.querySelector('.entry-desc').value.trim(),
+        desc:  el.querySelector('.entry-desc').innerHTML || '',
       });
     });
     return { doc, settings, entries };
@@ -638,7 +820,7 @@ function collectData() {
     return {
       doc, settings,
       opSections,
-      conclusion: (document.getElementById('op-conclusion').value || '').trim(),
+      conclusion: document.getElementById('op-conclusion').innerHTML || '',
       signatures: {
         name1: document.getElementById('sig-name1').value.trim(),
         name2: document.getElementById('sig-name2').value.trim(),
@@ -652,7 +834,7 @@ function collectData() {
     const steps = [];
     secEl.querySelectorAll('.step-block').forEach(stepEl => {
       steps.push({
-        text:      stepEl.querySelector('.step-text').value.trim(),
+        text:      stepEl.querySelector('.step-text').innerHTML || '',
         alertType: stepEl.querySelector('.step-alert-select').value,
         alertText: stepEl.querySelector('.step-alert-input')?.value.trim() || '',
         image:     stepEl.dataset.img || null,
@@ -827,13 +1009,14 @@ async function buildSectionedDocPDF(data) {
     doc.setLineWidth(0.4);
     doc.line(ML, y, PW - MR, y);
     y += 6;
-    section.steps.forEach((step, si) => { if (step.text || step.image) drawStep(step, si + 1); });
+    section.steps.forEach((step, si) => { if (richHTMLToPlain(step.text || '').trim() || step.image) drawStep(step, si + 1); });
     y += 4;
   }
 
   function drawStep(step, num) {
-    const lines = ctx.wrappedLines(step.text || '', CW - 14, 10);
-    const textH = lines.length * ctx.lineHeight(10) + 2;
+    const segs   = parseRichHTMLSegments(step.text || '');
+    const lines  = richHTMLToPlain(step.text || '').trim() ? buildRichLines(doc, segs, CW - 14, 10) : [];
+    const textH  = Math.max(1, lines.length) * ctx.lineHeight(10) + 2;
     ensureSpace(textH + 8);
 
     ctx.setColor(ACCENT, 'fill');
@@ -844,9 +1027,7 @@ async function buildSectionedDocPDF(data) {
     doc.text(String(num), ML + 3.5, y + 4.3, { align: 'center' });
 
     ctx.setColor(TEXT, 'text');
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(lines, ML + 10, y + 4);
+    drawRichLines(doc, lines, ML + 10, y + 4, 10);
     y += textH + 2;
 
     if (step.alertType && step.alertText) drawAlert(step.alertType, step.alertText);
@@ -957,9 +1138,10 @@ async function buildChangelogDocPDF(data) {
 
     const titleLines = ctx.wrappedLines(entry.title || '—', contentW, 9.5);
     const titleH     = titleLines.length * ctx.lineHeight(9.5);
-    const descText   = (entry.desc || '').trim();
-    const descLines  = descText ? ctx.wrappedLines(descText, contentW, 9) : [];
-    const rowH       = Math.max(16, titleH + (descLines.length > 0 ? 3 + descLines.length * ctx.lineHeight(9) : 0) + 8);
+    const descSegs   = parseRichHTMLSegments(entry.desc || '');
+    const descRich   = buildRichLines(doc, descSegs, contentW, 9);
+    const hasDesc    = descRich.length > 0 && descRich[0].length > 0;
+    const rowH       = Math.max(16, titleH + (hasDesc ? 3 + descRich.length * ctx.lineHeight(9) : 0) + 8);
 
     ensureSpace(rowH + 1);
 
@@ -985,11 +1167,9 @@ async function buildChangelogDocPDF(data) {
     doc.setFontSize(9.5);
     doc.text(titleLines, contentX, y + 5);
 
-    if (descLines.length > 0) {
+    if (hasDesc) {
       ctx.setColor([55, 65, 81], 'text');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text(descLines, contentX, y + 5 + titleH + 3);
+      drawRichLines(doc, descRich, contentX, y + 5 + titleH + 3, 9);
     }
     y += rowH + 1;
   }
@@ -1258,14 +1438,14 @@ async function buildSectionedDocWord(data) {
     }));
 
     for (const [stIdx, step] of section.steps.entries()) {
-      if (!step.text && !step.image) continue;
+      if (!richHTMLToPlain(step.text || '').trim() && !step.image) continue;
 
-      if (step.text) {
+      if (richHTMLToPlain(step.text || '').trim()) {
         children.push(new D.Paragraph({
           spacing: { before: 100, after: 80 },
           children: [
             new D.TextRun({ text: `${stIdx + 1}.  `, bold: true, size: 21, color: ACCENT }),
-            new D.TextRun({ text: step.text, size: 21, color: '1A1D2E' }),
+            ...htmlToWordRuns(D, step.text, { size: 21, color: '1A1D2E' }),
           ],
         }));
       }
@@ -1407,7 +1587,7 @@ async function buildChangelogDocWord(data) {
               spacing: { after: 80 },
             }),
             ...(entry.desc ? [new D.Paragraph({
-              children: [new D.TextRun({ text: entry.desc, size: 18, color: '374151' })],
+              children: htmlToWordRuns(D, entry.desc, { size: 18, color: '374151' }),
             })] : []),
           ],
         }),
@@ -1484,8 +1664,9 @@ async function buildOperationalDocPDF(data) {
     y += 5;
   }
 
-  function drawConclusion(text) {
-    if (!text) return;
+  function drawConclusion(html) {
+    const plain = richHTMLToPlain(html).trim();
+    if (!plain) return;
     ensureSpace(30);
     ctx.setColor(ACCENT, 'fill');
     doc.rect(ML, y, 3, 7, 'F');
@@ -1495,7 +1676,8 @@ async function buildOperationalDocPDF(data) {
     doc.text('CONCLUSÃO', ML + 5, y + 5.5);
     y += 12;
 
-    const lines = ctx.wrappedLines(text, CW - 12, 10);
+    const segs  = parseRichHTMLSegments(html);
+    const lines = buildRichLines(doc, segs, CW - 12, 10);
     const boxH  = lines.length * ctx.lineHeight(10) + 14;
     ensureSpace(boxH + 4);
 
@@ -1508,9 +1690,7 @@ async function buildOperationalDocPDF(data) {
     doc.roundedRect(ML, y, 3.5, boxH, 1.5, 1.5, 'F');
 
     ctx.setColor(TEXT, 'text');
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(lines, ML + 8, y + 9);
+    drawRichLines(doc, lines, ML + 8, y + 9, 10);
     y += boxH + 10;
   }
 
@@ -1617,7 +1797,8 @@ async function buildOperationalDocWord(data) {
   });
 
   // Conclusão
-  if (data.conclusion) {
+  const conclusionPlain = richHTMLToPlain(data.conclusion || '').trim();
+  if (conclusionPlain) {
     children.push(new D.Paragraph({
       border: { left: { style: D.BorderStyle.THICK, size: 14, color: BLUE, space: 4 } },
       spacing: { before: 360, after: 200 },
@@ -1631,12 +1812,10 @@ async function buildOperationalDocWord(data) {
           shading: { fill: 'F8FAFC', type: D.ShadingType.CLEAR, color: 'auto' },
           borders: { top: BDR_BLUE, bottom: BDR_BLUE, left: BDR_BLUE, right: BDR_BLUE },
           margins: { top: 120, bottom: 120, left: 200, right: 200 },
-          children: data.conclusion.split('\n').filter(Boolean).map(line =>
-            new D.Paragraph({
-              children: [new D.TextRun({ text: line, size: 21, color: '1A1D2E' })],
-              spacing: { before: 40, after: 40 },
-            })
-          ),
+          children: [new D.Paragraph({
+            children: htmlToWordRuns(D, data.conclusion, { size: 21, color: '1A1D2E' }),
+            spacing: { before: 40, after: 40 },
+          })],
         })],
       })],
     }));
