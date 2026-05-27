@@ -8,6 +8,16 @@ let entryCounter = 0;
 let currentDocType = 'guide';
 let logoBase64 = null;
 
+// ── Paleta de marca compartilhada ─────────
+const BRAND = {
+  WORDMARK:  [95, 118, 180],   // texto "BETHA"
+  SLOGAN:    [148, 165, 210],  // tagline
+  GUIDE_ACC: [88, 110, 172],   // guia/changelog: separador, cabeçalho tabela
+  GUIDE_BG:  [88, 110, 172],   // guia/changelog: fundo header continuação
+  TECH_ACC:  [13, 148, 120],   // técnico: acento teal
+  TECH_BG:   [30, 41, 59],     // técnico: fundo header continuação
+};
+
 // ── Init ──────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -437,6 +447,86 @@ function pdfFilename(title) {
     .replace(/^-|-$/g, '');
 }
 
+// ── PDF: header compartilhado ─────────────
+// Renderiza o cabeçalho principal em todos os tipos de documento.
+// Retorna o Y inicial do corpo (após metadados).
+function drawPDFSharedHeader(doc, data, accentRGB, headerLabel) {
+  const ML = 15, MR = 15, PW = 210, CW = PW - ML - MR;
+  const MUTED = [107, 114, 128];
+  const leftZoneW = 65;
+  const logoY = 8;
+
+  function sc(rgb, t) {
+    if (t === 'text') doc.setTextColor(...rgb);
+    if (t === 'draw') doc.setDrawColor(...rgb);
+  }
+  function st(s) { return (s || '').replace(/['']/g, "'").replace(/[""]/g, '"'); }
+  function lh(sz)  { return sz * 0.3528 * 1.4; }
+
+  if (data.settings.showLogo) {
+    const cx = ML + leftZoneW / 2;
+
+    // BETHA: bold italic, centralizado horizontalmente na zona esquerda
+    doc.setFont('helvetica', 'bolditalic');
+    doc.setFontSize(18);
+    sc(BRAND.WORDMARK, 'text');
+    const bW = doc.getTextWidth('BETHA');
+    doc.text('BETHA', cx - bW / 2, logoY + 13);
+
+    // Slogan: duas linhas centralizadas abaixo do wordmark
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    sc(BRAND.SLOGAN, 'text');
+    const s1 = 'Tudo que a sua cidade';
+    const s2 = 'pode se tornar';
+    doc.text(s1, cx - doc.getTextWidth(s1) / 2, logoY + 17);
+    doc.text(s2, cx - doc.getTextWidth(s2) / 2, logoY + 20.5);
+  }
+
+  // Lado direito: apenas o rótulo do tipo (título vai abaixo da linha)
+  const rX = ML + leftZoneW + 5;
+  if (headerLabel) {
+    sc(MUTED, 'text');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text(headerLabel, rX, logoY + 13);
+  }
+
+  // Linha separadora
+  const sepY = logoY + 24;
+  sc(accentRGB, 'draw');
+  doc.setLineWidth(0.4);
+  doc.line(ML, sepY, PW - MR, sepY);
+
+  // Título — abaixo da linha, largura total
+  const titleY = sepY + 7;
+  doc.setTextColor(20, 30, 70);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  const titleLines = doc.splitTextToSize(st(data.doc.title || 'Documento'), CW);
+  doc.text(titleLines, ML, titleY);
+  const afterTitle = titleY + titleLines.length * lh(13);
+
+  // Metadados
+  const metaParts = [
+    data.doc.entity && `Entidade: ${data.doc.entity}`,
+    data.doc.module && `Modulo: ${data.doc.module}`,
+    data.doc.author && `Responsavel: ${data.doc.author}`,
+    data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
+    data.doc.ticket && `Chamado: ${data.doc.ticket}`,
+  ].filter(Boolean);
+
+  if (metaParts.length) {
+    const metaY = afterTitle + 3;
+    doc.setTextColor(...MUTED);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text(metaParts.join('   |   '), ML, metaY, { maxWidth: CW });
+    return metaY + 8;
+  }
+  return afterTitle + 8;
+}
+
 // ── PDF: Guide + Technical ────────────────
 
 async function buildSectionedDocPDF(data) {
@@ -448,8 +538,8 @@ async function buildSectionedDocPDF(data) {
   const isTech = data.doc.type === 'technical';
 
   const PALETTE = isTech ? {
-    HEADER_BG: [30, 41, 59],
-    ACCENT:    [14, 165, 133],
+    HEADER_BG: BRAND.TECH_BG,
+    ACCENT:    BRAND.TECH_ACC,
     HEADER_LABEL: 'DOCUMENTAÇÃO TÉCNICA',
     ALERTS: {
       info:    { fill: [243, 253, 251], border: [13, 148, 136], label: 'Nota' },
@@ -457,8 +547,8 @@ async function buildSectionedDocPDF(data) {
       danger:  { fill: [255, 249, 240], border: [234, 88, 12],  label: 'Importante' },
     },
   } : {
-    HEADER_BG: [61, 90, 241],
-    ACCENT:    [61, 90, 241],
+    HEADER_BG: BRAND.GUIDE_BG,
+    ACCENT:    BRAND.GUIDE_ACC,
     HEADER_LABEL: 'GUIA PASSO A PASSO',
     ALERTS: {
       info:    { fill: [243, 248, 255], border: [37, 99, 235],  label: 'Dica' },
@@ -501,67 +591,7 @@ async function buildSectionedDocPDF(data) {
   }
 
   function drawMainHeader() {
-    const logoY = 8;
-
-    if (data.settings.showLogo) {
-      // ── Wordmark BETHA (texto, azul fosco, sem contorno) ──
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
-      setColor([100, 128, 200], 'text');
-      doc.text('BETHA', ML, logoY + 15);
-      const bethaW = doc.getTextWidth('BETHA') + 4;
-
-      // ── Slogan (linhas próximas, 3.5mm gap) ──
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.5);
-      setColor([148, 165, 215], 'text');
-      doc.text('Tudo que a sua cidade', ML + bethaW, logoY + 10);
-      doc.text('pode se tornar', ML + bethaW, logoY + 13.5);
-    }
-
-    // ── Lado direito: tipo + título ──
-    const rX = ML + 70;
-    const rW = PW - MR - rX;
-
-    if (PALETTE.HEADER_LABEL) {
-      setColor(MUTED, 'text');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
-      doc.text(PALETTE.HEADER_LABEL, rX, logoY + 6);
-    }
-
-    setColor([20, 30, 70], 'text');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    const titleY = PALETTE.HEADER_LABEL ? logoY + 14 : logoY + 10;
-    const titleLines = wrappedLines(data.doc.title || 'Documento', rW, 14);
-    doc.text(titleLines, rX, titleY);
-
-    // ── Linha separadora ──
-    const sepY = Math.max(logoY + 27, titleY + titleLines.length * lineHeight(14) + 4);
-    setColor(PALETTE.ACCENT, 'draw');
-    doc.setLineWidth(0.4);
-    doc.line(ML, sepY, PW - MR, sepY);
-
-    // ── Metadados ──
-    const metaParts = [
-      data.doc.entity && `Entidade: ${data.doc.entity}`,
-      data.doc.module && `Modulo: ${data.doc.module}`,
-      data.doc.author && `Responsavel: ${data.doc.author}`,
-      data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
-      data.doc.ticket && `Chamado: ${data.doc.ticket}`,
-    ].filter(Boolean);
-
-    if (metaParts.length) {
-      const metaY = sepY + 5;
-      setColor(MUTED, 'text');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
-      doc.text(metaParts.join('   |   '), ML, metaY, { maxWidth: CW });
-      y = metaY + 8;
-    } else {
-      y = sepY + 8;
-    }
+    y = drawPDFSharedHeader(doc, data, PALETTE.ACCENT, PALETTE.HEADER_LABEL);
   }
 
   function drawContinuationHeader() {
@@ -748,7 +778,7 @@ async function buildChangelogDocPDF(data) {
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
   const PW = 210, PH = 297, ML = 15, MR = 15, MB = 22, CW = PW - ML - MR;
-  const BLUE   = [61, 90, 241];
+  const BLUE   = BRAND.GUIDE_ACC;
   const WHITE  = [255, 255, 255];
   const TEXT   = [26, 29, 46];
   const MUTED  = [107, 114, 128];
@@ -790,64 +820,7 @@ async function buildChangelogDocPDF(data) {
   }
 
   function drawMainHeader() {
-    const logoY = 8;
-
-    if (data.settings.showLogo) {
-      // ── Wordmark BETHA (texto, azul fosco, sem contorno) ──
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
-      setColor([100, 128, 200], 'text');
-      doc.text('BETHA', ML, logoY + 15);
-      const bethaW = doc.getTextWidth('BETHA') + 4;
-
-      // ── Slogan (linhas próximas, 3.5mm gap) ──
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.5);
-      setColor([148, 165, 215], 'text');
-      doc.text('Tudo que a sua cidade', ML + bethaW, logoY + 10);
-      doc.text('pode se tornar', ML + bethaW, logoY + 13.5);
-    }
-
-    // ── Tipo + título ──
-    const rX = ML + 70;
-    const rW = PW - MR - rX;
-
-    setColor(MUTED, 'text');
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.text('REGISTRO DE ALTERAÇÕES', rX, logoY + 6);
-
-    setColor([20, 30, 70], 'text');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    const titleLines = wrappedLines(data.doc.title || 'Documento', rW, 14);
-    doc.text(titleLines, rX, logoY + 14);
-
-    // ── Separador ──
-    const sepY = Math.max(logoY + 27, logoY + 14 + titleLines.length * lineHeight(14) + 4);
-    setColor(BLUE, 'draw');
-    doc.setLineWidth(0.4);
-    doc.line(ML, sepY, PW - MR, sepY);
-
-    // ── Metadados ──
-    const metaParts = [
-      data.doc.entity && `Entidade: ${data.doc.entity}`,
-      data.doc.module && `Modulo: ${data.doc.module}`,
-      data.doc.author && `Responsavel: ${data.doc.author}`,
-      data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
-      data.doc.ticket && `Chamado: ${data.doc.ticket}`,
-    ].filter(Boolean);
-
-    if (metaParts.length) {
-      const metaY = sepY + 5;
-      setColor(MUTED, 'text');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
-      doc.text(metaParts.join('   |   '), ML, metaY, { maxWidth: CW });
-      y = metaY + 8;
-    } else {
-      y = sepY + 8;
-    }
+    y = drawPDFSharedHeader(doc, data, BLUE, 'REGISTRO DE ALTERAÇÕES');
   }
 
   function drawContinuationHeader() {
@@ -1165,8 +1138,8 @@ function makeWordHeader(D, accentHex, showLogo) {
   return new D.Paragraph({
     spacing: { after: 120 },
     children: [
-      new D.TextRun({ text: 'BETHA  ', bold: true, size: 38, color: '6482C8' }),
-      new D.TextRun({ text: 'Tudo que a sua cidade  •  pode se tornar', size: 14, color: '94A7DA' }),
+      new D.TextRun({ text: 'BETHA  ', bold: true, italics: true, size: 38, color: '5F76B4' }),
+      new D.TextRun({ text: 'Tudo que a sua cidade  •  pode se tornar', size: 14, color: '94A5D2' }),
     ],
   });
 }
@@ -1176,7 +1149,7 @@ function makeWordHeader(D, accentHex, showLogo) {
 async function buildSectionedDocWord(data) {
   const D = window.docx;
   const isTech  = data.doc.type === 'technical';
-  const ACCENT  = isTech ? '0EA5E9' : '3D5AF1';
+  const ACCENT  = isTech ? '0D9478' : '586EAC';
   const TYPE_LBL = isTech
     ? 'DOCUMENTAÇÃO TÉCNICA • BETHA SISTEMAS'
     : 'GUIA PASSO A PASSO • BETHA SISTEMAS';
@@ -1350,7 +1323,7 @@ async function buildSectionedDocWord(data) {
 
 async function buildChangelogDocWord(data) {
   const D    = window.docx;
-  const BLUE = '3D5AF1';
+  const BLUE = '586EAC';
 
   const TYPE_CFG = {
     addition:    { fill: 'D1FAE5', text: '065F46', label: 'Criação' },
