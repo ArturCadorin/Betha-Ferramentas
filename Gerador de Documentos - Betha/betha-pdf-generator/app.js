@@ -464,21 +464,22 @@ function drawPDFSharedHeader(doc, data, accentRGB, headerLabel) {
   function lh(sz)  { return sz * 0.3528 * 1.4; }
 
   if (data.settings.showLogo) {
-    // BETHA: bold italic, alinhado à margem esquerda da página
+    // BETHA: bold italic, alinhado à margem esquerda
     doc.setFont('helvetica', 'bolditalic');
     doc.setFontSize(18);
     sc(BRAND.WORDMARK, 'text');
     doc.text('BETHA', ML, logoY + 13);
 
-    // Slogan: alinhado à margem esquerda, abaixo do wordmark
+    // Slogan: à direita do wordmark, centralizado verticalmente com ele
+    const bethaW = doc.getTextWidth('BETHA') + 3;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.5);
     sc(BRAND.SLOGAN, 'text');
-    doc.text('Tudo que a sua cidade', ML, logoY + 17);
-    doc.text('pode se tornar', ML, logoY + 20.5);
+    doc.text('Tudo que a sua cidade', ML + bethaW, logoY + 9.5);
+    doc.text('pode se tornar',        ML + bethaW, logoY + 13);
   }
 
-  // Lado direito: apenas o rótulo do tipo (título vai abaixo da linha)
+  // Lado direito: apenas o rótulo do tipo
   const rX = ML + leftZoneW + 5;
   if (headerLabel) {
     sc(MUTED, 'text');
@@ -488,13 +489,13 @@ function drawPDFSharedHeader(doc, data, accentRGB, headerLabel) {
   }
 
   // Linha separadora
-  const sepY = logoY + 24;
+  const sepY = logoY + 20;
   sc(accentRGB, 'draw');
   doc.setLineWidth(0.4);
   doc.line(ML, sepY, PW - MR, sepY);
 
   // Título — abaixo da linha, largura total
-  const titleY = sepY + 7;
+  const titleY = sepY + 6;
   doc.setTextColor(20, 30, 70);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
@@ -502,7 +503,7 @@ function drawPDFSharedHeader(doc, data, accentRGB, headerLabel) {
   doc.text(titleLines, ML, titleY);
   const afterTitle = titleY + titleLines.length * lh(13);
 
-  // Metadados
+  // Metadados — mais próximos do título, fonte maior
   const metaParts = [
     data.doc.entity && `Entidade: ${data.doc.entity}`,
     data.doc.module && `Modulo: ${data.doc.module}`,
@@ -512,14 +513,14 @@ function drawPDFSharedHeader(doc, data, accentRGB, headerLabel) {
   ].filter(Boolean);
 
   if (metaParts.length) {
-    const metaY = afterTitle + 3;
+    const metaY = afterTitle + 1.5;
     doc.setTextColor(...MUTED);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(8.5);
     doc.text(metaParts.join('   |   '), ML, metaY, { maxWidth: CW });
-    return metaY + 8;
+    return metaY + 9;
   }
-  return afterTitle + 8;
+  return afterTitle + 7;
 }
 
 // ── PDF: Guide + Technical ────────────────
