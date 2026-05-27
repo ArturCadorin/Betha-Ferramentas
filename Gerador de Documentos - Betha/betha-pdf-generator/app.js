@@ -464,23 +464,18 @@ function drawPDFSharedHeader(doc, data, accentRGB, headerLabel) {
   function lh(sz)  { return sz * 0.3528 * 1.4; }
 
   if (data.settings.showLogo) {
-    const cx = ML + leftZoneW / 2;
-
-    // BETHA: bold italic, centralizado horizontalmente na zona esquerda
+    // BETHA: bold italic, alinhado à margem esquerda da página
     doc.setFont('helvetica', 'bolditalic');
     doc.setFontSize(18);
     sc(BRAND.WORDMARK, 'text');
-    const bW = doc.getTextWidth('BETHA');
-    doc.text('BETHA', cx - bW / 2, logoY + 13);
+    doc.text('BETHA', ML, logoY + 13);
 
-    // Slogan: duas linhas centralizadas abaixo do wordmark
+    // Slogan: alinhado à margem esquerda, abaixo do wordmark
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.5);
     sc(BRAND.SLOGAN, 'text');
-    const s1 = 'Tudo que a sua cidade';
-    const s2 = 'pode se tornar';
-    doc.text(s1, cx - doc.getTextWidth(s1) / 2, logoY + 17);
-    doc.text(s2, cx - doc.getTextWidth(s2) / 2, logoY + 20.5);
+    doc.text('Tudo que a sua cidade', ML, logoY + 17);
+    doc.text('pode se tornar', ML, logoY + 20.5);
   }
 
   // Lado direito: apenas o rótulo do tipo (título vai abaixo da linha)
@@ -892,11 +887,10 @@ async function buildChangelogDocPDF(data) {
     setColor(WHITE, 'text');
     doc.setFont('helvetica', 'bold');
 
-    // "TIPO DE OPERAÇÃO" centralizado na coluna esquerda
+    // "TIPO" centralizado na coluna esquerda
     const dateColCx = COL.date.x + COL.date.w / 2;
     doc.setFontSize(7.5);
-    doc.text('TIPO DE',  dateColCx, y + 4,   { align: 'center' });
-    doc.text('OPERAÇÃO', dateColCx, y + 7.8,  { align: 'center' });
+    doc.text('TIPO', dateColCx, y + 6, { align: 'center' });
 
     // "DESCRIÇÃO" alinhado ao início da coluna de conteúdo
     doc.setFontSize(8);
@@ -1401,7 +1395,7 @@ async function buildChangelogDocWord(data) {
         margins: { top: 80, bottom: 80, left: 120, right: 120 },
         children: [new D.Paragraph({
           alignment: D.AlignmentType.CENTER,
-          children: [new D.TextRun({ text: 'TIPO DE OPERAÇÃO', bold: true, size: 18, color: 'FFFFFF' })],
+          children: [new D.TextRun({ text: 'TIPO', bold: true, size: 18, color: 'FFFFFF' })],
         })],
       }),
       new D.TableCell({
