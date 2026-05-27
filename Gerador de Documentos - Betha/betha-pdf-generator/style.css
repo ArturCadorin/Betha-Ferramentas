@@ -1179,7 +1179,7 @@ textarea::placeholder { color: #9CA3AF; }
 
 .op-sig-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
 

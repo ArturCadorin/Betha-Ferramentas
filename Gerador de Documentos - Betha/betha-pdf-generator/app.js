@@ -642,7 +642,7 @@ function collectData() {
       signatures: {
         name1: document.getElementById('sig-name1').value.trim(),
         name2: document.getElementById('sig-name2').value.trim(),
-        city:  document.getElementById('sig-city').value.trim(),
+        city:  doc.entity,   // reutiliza o campo Entidade do cabeçalho
       },
     };
   }
