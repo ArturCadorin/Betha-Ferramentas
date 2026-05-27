@@ -10,13 +10,197 @@ let logoBase64 = null;
 
 // ── Paleta de marca compartilhada ─────────
 const BRAND = {
-  WORDMARK:  [95, 118, 180],   // texto "BETHA"
-  SLOGAN:    [148, 165, 210],  // tagline
-  GUIDE_ACC: [88, 110, 172],   // guia/changelog: separador, cabeçalho tabela
-  GUIDE_BG:  [88, 110, 172],   // guia/changelog: fundo header continuação
-  TECH_ACC:  [13, 148, 120],   // técnico: acento teal
-  TECH_BG:   [30, 41, 59],     // técnico: fundo header continuação
+  WORDMARK:  [95, 118, 180],
+  SLOGAN:    [148, 165, 210],
+  GUIDE_ACC: [88, 110, 172],
+  GUIDE_BG:  [88, 110, 172],
+  TECH_ACC:  [13, 148, 120],
+  TECH_BG:   [30, 41, 59],
 };
+
+// ── Registro de tipos de documento ────────
+// Para adicionar um novo tipo: crie uma entrada aqui + uma função builder.
+// Nenhum outro código precisa ser alterado.
+const DOC_REGISTRY = {
+  guide: {
+    label:        'GUIA PASSO A PASSO',
+    accentRGB:    BRAND.GUIDE_ACC,
+    bgRGB:        BRAND.GUIDE_BG,
+    accentHex:    '586EAC',
+    wordTypeLabel:'GUIA PASSO A PASSO • BETHA SISTEMAS',
+    alertCfg: {
+      info:    { fill: [243, 248, 255], border: [37, 99, 235],  label: 'Dica' },
+      warning: { fill: [255, 253, 242], border: [217, 119, 6],  label: 'Atencao' },
+      danger:  { fill: [255, 245, 245], border: [220, 38, 38],  label: 'Critico' },
+    },
+    alertWordCfg: {
+      info:    { fill: 'EFF6FF', border: '2563EB', label: 'DICA' },
+      warning: { fill: 'FFFBEB', border: 'D97706', label: 'ATENCAO' },
+      danger:  { fill: 'FFF5F5', border: 'DC2626', label: 'CRITICO' },
+    },
+    buildPDF:  (data) => buildSectionedDocPDF(data),
+    buildWord: (data) => buildSectionedDocWord(data),
+  },
+  technical: {
+    label:        'DOCUMENTAÇÃO TÉCNICA',
+    accentRGB:    BRAND.TECH_ACC,
+    bgRGB:        BRAND.TECH_BG,
+    accentHex:    '0D9478',
+    wordTypeLabel:'DOCUMENTAÇÃO TÉCNICA • BETHA SISTEMAS',
+    alertCfg: {
+      info:    { fill: [243, 253, 251], border: [13, 148, 136], label: 'Nota' },
+      warning: { fill: [255, 253, 242], border: [217, 119, 6],  label: 'Aviso' },
+      danger:  { fill: [255, 249, 240], border: [234, 88, 12],  label: 'Importante' },
+    },
+    alertWordCfg: {
+      info:    { fill: 'F0FDF9', border: '0D9488', label: 'NOTA' },
+      warning: { fill: 'FFFBEB', border: 'D97706', label: 'AVISO' },
+      danger:  { fill: 'FFF7F0', border: 'EA580C', label: 'IMPORTANTE' },
+    },
+    buildPDF:  (data) => buildSectionedDocPDF(data),
+    buildWord: (data) => buildSectionedDocWord(data),
+  },
+  changelog: {
+    label:     'REGISTRO DE ALTERAÇÕES',
+    accentRGB: BRAND.GUIDE_ACC,
+    bgRGB:     BRAND.GUIDE_BG,
+    accentHex: '586EAC',
+    buildPDF:  (data) => buildChangelogDocPDF(data),
+    buildWord: (data) => buildChangelogDocWord(data),
+  },
+};
+
+// ── PDF: contexto de renderização ─────────
+// Centraliza constantes e helpers do jsPDF.
+// Uso: const ctx = createPDFCtx(doc); const { ML, CW } = ctx;
+function createPDFCtx(doc) {
+  const PW = 210, PH = 297, ML = 15, MR = 15, MB = 22, CW = PW - ML - MR;
+  const TEXT   = [26, 29, 46];
+  const MUTED  = [107, 114, 128];
+  const WHITE  = [255, 255, 255];
+  const BORDER = [229, 231, 235];
+  const self = {
+    PW, PH, ML, MR, MB, CW, TEXT, MUTED, WHITE, BORDER,
+    setColor(rgb, type = 'fill') {
+      if (type === 'fill') doc.setFillColor(...rgb);
+      if (type === 'text') doc.setTextColor(...rgb);
+      if (type === 'draw') doc.setDrawColor(...rgb);
+    },
+    safeText(str) {
+      return (str || '').replace(/['']/g, "'").replace(/[""]/g, '"');
+    },
+    wrappedLines(text, maxW, size) {
+      doc.setFontSize(size);
+      return doc.splitTextToSize(self.safeText(text), maxW);
+    },
+    lineHeight(size) { return size * 0.3528 * 1.4; },
+  };
+  return self;
+}
+
+// ── PDF: rodapé compartilhado ─────────────
+function drawPDFFooter(doc, ctx, data, accentRGB, page) {
+  if (!data.settings.showFooter && !data.settings.showPageNumbers) return;
+  const { ML, MR, PW, PH, MUTED } = ctx;
+  const fy = PH - 20;
+
+  ctx.setColor(accentRGB, 'draw');
+  doc.setLineWidth(0.3);
+  doc.line(ML, fy, PW - MR, fy);
+
+  if (data.settings.showFooter) {
+    ctx.setColor(accentRGB, 'text');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('Matriz Betha Sistemas', ML, fy + 5);
+
+    ctx.setColor(MUTED, 'text');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text('Rua Julio Gaidzinski, 320,', ML, fy + 9.5);
+    doc.text('88811-000, Pio Correa / Criciuma - SC', ML, fy + 13.5);
+
+    ctx.setColor(accentRGB, 'text');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('48 3431-0733', PW - MR, fy + 5, { align: 'right' });
+
+    ctx.setColor(MUTED, 'text');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text('Atendimento tecnico', PW - MR, fy + 9.5, { align: 'right' });
+
+    ctx.setColor(accentRGB, 'text');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.text('0800 600 0735', PW - MR, fy + 13.5, { align: 'right' });
+  }
+
+  if (data.settings.showPageNumbers) {
+    ctx.setColor(MUTED, 'text');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    const pnY = data.settings.showFooter ? fy + 9.5 : fy + 5;
+    doc.text(`Pagina ${page}`, PW / 2, pnY, { align: 'center' });
+  }
+}
+
+// ── PDF: cabeçalho de continuação compartilhado ──
+// Renderiza o mini-header nas páginas 2+. Retorna o novo Y.
+function drawPDFContinuationHeader(doc, ctx, data, bgRGB) {
+  const { ML, CW, WHITE } = ctx;
+  ctx.setColor(bgRGB, 'fill');
+  doc.rect(0, 0, 210, 11, 'F');
+
+  if (data.settings.showLogo && logoBase64) {
+    doc.addImage(logoBase64, 'PNG', ML, 1.5, 8, 8);
+  }
+
+  ctx.setColor(WHITE, 'text');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  const xT = data.settings.showLogo && logoBase64 ? ML + 11 : ML;
+  doc.text(ctx.safeText(data.doc.title || ''), xT, 7.5, { maxWidth: CW - 12 });
+
+  return 18;
+}
+
+// ── Word: metadados compartilhados ────────
+
+// Retorna o array de strings de metadados do documento.
+function collectWordMetaItems(data) {
+  return [
+    data.doc.entity && `Entidade: ${data.doc.entity}`,
+    data.doc.module && `Modulo: ${data.doc.module}`,
+    data.doc.author && `Responsavel: ${data.doc.author}`,
+    data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
+    data.doc.ticket && `Chamado: ${data.doc.ticket}`,
+  ].filter(Boolean);
+}
+
+// Retorna os elementos Word da tabela de metadados (array pronto para push).
+function makeWordMetaTable(D, accentHex, items) {
+  if (!items.length) return [];
+  const NONE = { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  return [
+    new D.Table({
+      width: { size: 100, type: D.WidthType.PERCENTAGE },
+      borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideH: NONE, insideV: NONE },
+      rows: [new D.TableRow({
+        children: [new D.TableCell({
+          shading: { fill: 'F8FAFC', type: D.ShadingType.CLEAR, color: 'auto' },
+          borders: { top: { style: D.BorderStyle.SINGLE, size: 4, color: accentHex, space: 1 }, bottom: NONE, left: NONE, right: NONE },
+          margins: { top: 80, bottom: 80, left: 120, right: 120 },
+          children: items.map(item => new D.Paragraph({
+            children: [new D.TextRun({ text: item, size: 18, color: '374151' })],
+            spacing: { before: 40, after: 40 },
+          })),
+        })],
+      })],
+    }),
+    new D.Paragraph({ spacing: { after: 320 }, children: [] }),
+  ];
+}
 
 // ── Init ──────────────────────────────────
 
@@ -426,11 +610,7 @@ async function generate() {
   showToast('Gerando PDF…');
 
   try {
-    if (currentDocType === 'changelog') {
-      await buildChangelogDocPDF(data);
-    } else {
-      await buildSectionedDocPDF(data);
-    }
+    await DOC_REGISTRY[currentDocType].buildPDF(data);
   } catch (err) {
     console.error(err);
     showToast('Erro ao gerar o PDF. Veja o console para detalhes.', 'error');
@@ -528,240 +708,106 @@ function drawPDFSharedHeader(doc, data, accentRGB, headerLabel) {
 async function buildSectionedDocPDF(data) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  const ctx = createPDFCtx(doc);
+  const { PW, PH, ML, MR, MB, CW, TEXT, WHITE, BORDER } = ctx;
 
-  const PW = 210, PH = 297, ML = 15, MR = 15, MB = 22, CW = PW - ML - MR;
-
-  const isTech = data.doc.type === 'technical';
-
-  const PALETTE = isTech ? {
-    HEADER_BG: BRAND.TECH_BG,
-    ACCENT:    BRAND.TECH_ACC,
-    HEADER_LABEL: 'DOCUMENTAÇÃO TÉCNICA',
-    ALERTS: {
-      info:    { fill: [243, 253, 251], border: [13, 148, 136], label: 'Nota' },
-      warning: { fill: [255, 253, 242], border: [217, 119, 6],  label: 'Aviso' },
-      danger:  { fill: [255, 249, 240], border: [234, 88, 12],  label: 'Importante' },
-    },
-  } : {
-    HEADER_BG: BRAND.GUIDE_BG,
-    ACCENT:    BRAND.GUIDE_ACC,
-    HEADER_LABEL: 'GUIA PASSO A PASSO',
-    ALERTS: {
-      info:    { fill: [243, 248, 255], border: [37, 99, 235],  label: 'Dica' },
-      warning: { fill: [255, 253, 242], border: [217, 119, 6],  label: 'Atencao'  },
-      danger:  { fill: [255, 245, 245], border: [220, 38, 38],  label: 'Critico'  },
-    },
-  };
-
-  const TEXT  = [26, 29, 46];
-  const MUTED = [107, 114, 128];
-  const WHITE = [255, 255, 255];
-  const BORDER = [229, 231, 235];
+  const reg    = DOC_REGISTRY[data.doc.type] || DOC_REGISTRY.guide;
+  const ACCENT = reg.accentRGB;
+  const ALERTS = reg.alertCfg;
 
   let page = 1, y = 0;
 
-  function setColor(rgb, type = 'fill') {
-    if (type === 'fill') doc.setFillColor(...rgb);
-    if (type === 'text') doc.setTextColor(...rgb);
-    if (type === 'draw') doc.setDrawColor(...rgb);
-  }
-
-  function safeText(str) {
-    return (str || '').replace(/['']/g, "'").replace(/[""]/g, '"');
-  }
-
-  function wrappedLines(text, maxW, size) {
-    doc.setFontSize(size);
-    return doc.splitTextToSize(safeText(text), maxW);
-  }
-
-  function lineHeight(size) { return size * 0.3528 * 1.4; }
-
   function ensureSpace(needed) {
     if (y + needed > PH - MB) {
-      drawFooter();
-      doc.addPage();
-      page++;
-      drawContinuationHeader();
-    }
-  }
-
-  function drawMainHeader() {
-    y = drawPDFSharedHeader(doc, data, PALETTE.ACCENT, PALETTE.HEADER_LABEL);
-  }
-
-  function drawContinuationHeader() {
-    setColor(PALETTE.HEADER_BG, 'fill');
-    doc.rect(0, 0, PW, 11, 'F');
-
-    if (data.settings.showLogo && logoBase64) {
-      doc.addImage(logoBase64, 'PNG', ML, 1.5, 8, 8);
-    }
-
-    setColor(WHITE, 'text');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    const xT = data.settings.showLogo && logoBase64 ? ML + 11 : ML;
-    doc.text(safeText(data.doc.title || ''), xT, 7.5, { maxWidth: CW - 12 });
-
-    y = 18;
-  }
-
-  function drawFooter() {
-    if (!data.settings.showFooter && !data.settings.showPageNumbers) return;
-
-    const fy = PH - 20;
-    setColor(PALETTE.ACCENT, 'draw');
-    doc.setLineWidth(0.3);
-    doc.line(ML, fy, PW - MR, fy);
-
-    if (data.settings.showFooter) {
-      // Esquerda: endereço
-      setColor(PALETTE.ACCENT, 'text');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.text('Matriz Betha Sistemas', ML, fy + 5);
-
-      setColor(MUTED, 'text');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.text('Rua Julio Gaidzinski, 320,', ML, fy + 9.5);
-      doc.text('88811-000, Pio Correa / Criciuma - SC', ML, fy + 13.5);
-
-      // Direita: contato
-      setColor(PALETTE.ACCENT, 'text');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.text('48 3431-0733', PW - MR, fy + 5, { align: 'right' });
-
-      setColor(MUTED, 'text');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.text('Atendimento tecnico', PW - MR, fy + 9.5, { align: 'right' });
-
-      setColor(PALETTE.ACCENT, 'text');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.text('0800 600 0735', PW - MR, fy + 13.5, { align: 'right' });
-    }
-
-    if (data.settings.showPageNumbers) {
-      setColor(MUTED, 'text');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      const pnY = data.settings.showFooter ? fy + 9.5 : fy + 5;
-      doc.text(`Pagina ${page}`, PW / 2, pnY, { align: 'center' });
+      drawPDFFooter(doc, ctx, data, ACCENT, page);
+      doc.addPage(); page++;
+      y = drawPDFContinuationHeader(doc, ctx, data, reg.bgRGB);
     }
   }
 
   function drawSection(section, index) {
     ensureSpace(16);
-
-    setColor(PALETTE.ACCENT, 'fill');
+    ctx.setColor(ACCENT, 'fill');
     doc.rect(ML, y, 3, 7, 'F');
-
-    setColor(PALETTE.ACCENT, 'text');
+    ctx.setColor(ACCENT, 'text');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    const sTitle = `${index + 1}. ${(section.title || 'Seção').toUpperCase()}`;
-    doc.text(safeText(sTitle), ML + 5, y + 5.5);
-
+    doc.text(ctx.safeText(`${index + 1}. ${(section.title || 'Seção').toUpperCase()}`), ML + 5, y + 5.5);
     y += 10;
-
-    setColor([200, 220, 220], 'draw');
+    ctx.setColor([200, 220, 220], 'draw');
     doc.setLineWidth(0.4);
     doc.line(ML, y, PW - MR, y);
-
     y += 6;
-
-    section.steps.forEach((step, si) => {
-      if (step.text || step.image) drawStep(step, si + 1);
-    });
-
+    section.steps.forEach((step, si) => { if (step.text || step.image) drawStep(step, si + 1); });
     y += 4;
   }
 
   function drawStep(step, num) {
-    const lines = wrappedLines(step.text || '', CW - 14, 10);
-    const textH = lines.length * lineHeight(10) + 2;
+    const lines = ctx.wrappedLines(step.text || '', CW - 14, 10);
+    const textH = lines.length * ctx.lineHeight(10) + 2;
     ensureSpace(textH + 8);
 
-    setColor(PALETTE.ACCENT, 'fill');
+    ctx.setColor(ACCENT, 'fill');
     doc.circle(ML + 3.5, y + 3.5, 3.5, 'F');
-    setColor(WHITE, 'text');
+    ctx.setColor(WHITE, 'text');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.text(String(num), ML + 3.5, y + 4.3, { align: 'center' });
 
-    setColor(TEXT, 'text');
+    ctx.setColor(TEXT, 'text');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.text(lines, ML + 10, y + 4);
-
     y += textH + 2;
 
-    if (step.alertType && step.alertText) {
-      drawAlert(step.alertType, step.alertText);
-    }
+    if (step.alertType && step.alertText) drawAlert(step.alertType, step.alertText);
 
     if (step.image) {
-      const maxImgW = CW - 10;
-      const maxImgH = 70;
+      const maxImgW = CW - 10, maxImgH = 70;
       const imgEl = new Image();
       imgEl.src = step.image;
       const ratio = imgEl.naturalWidth ? imgEl.naturalHeight / imgEl.naturalWidth : 0.6;
       const imgH = Math.min(maxImgH, maxImgW * ratio);
-
       ensureSpace(imgH + 6);
-
-      setColor(BORDER, 'draw');
+      ctx.setColor(BORDER, 'draw');
       doc.setLineWidth(0.3);
       doc.rect(ML + 8, y, maxImgW, imgH);
       doc.addImage(step.image, 'PNG', ML + 8, y, maxImgW, imgH, undefined, 'FAST');
       y += imgH + 6;
     }
-
     y += 3;
   }
 
   function drawAlert(type, text) {
-    const cfg = PALETTE.ALERTS[type];
+    const cfg = ALERTS[type];
     if (!cfg) return;
-
-    const lines = wrappedLines(text, CW - 26, 9);
-    const textH = lines.length * lineHeight(9);
-    const h     = textH + 14;
+    const lines = ctx.wrappedLines(text, CW - 26, 9);
+    const h = lines.length * ctx.lineHeight(9) + 14;
     ensureSpace(h + 4);
 
-    // Fundo sutil
-    setColor(cfg.fill, 'fill');
+    ctx.setColor(cfg.fill, 'fill');
     doc.roundedRect(ML + 8, y, CW - 8, h, 2.5, 2.5, 'F');
-
-    // Borda esquerda fina
-    setColor(cfg.border, 'fill');
+    ctx.setColor(cfg.border, 'fill');
     doc.roundedRect(ML + 8, y, 2, h, 1.5, 1.5, 'F');
 
-    // Badge pill com o tipo
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.5);
     const pillW = doc.getTextWidth(cfg.label) + 8;
-    setColor(cfg.border, 'fill');
+    ctx.setColor(cfg.border, 'fill');
     doc.roundedRect(ML + 13.5, y + 3.5, pillW, 5.2, 2, 2, 'F');
-    setColor(WHITE, 'text');
+    ctx.setColor(WHITE, 'text');
     doc.text(cfg.label, ML + 13.5 + pillW / 2, y + 7.4, { align: 'center' });
 
-    // Texto do alerta
-    setColor([75, 85, 99], 'text');
+    ctx.setColor([75, 85, 99], 'text');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.text(lines, ML + 13.5, y + 12);
-
     y += h + 3;
   }
 
-  drawMainHeader();
+  y = drawPDFSharedHeader(doc, data, ACCENT, reg.label);
   data.sections.forEach((section, i) => drawSection(section, i));
-  drawFooter();
+  drawPDFFooter(doc, ctx, data, ACCENT, page);
 
   doc.save(`${pdfFilename(data.doc.title)}.pdf`);
   showToast('PDF gerado com sucesso!', 'success');
@@ -772,137 +818,14 @@ async function buildSectionedDocPDF(data) {
 async function buildChangelogDocPDF(data) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  const ctx = createPDFCtx(doc);
+  const { PW, PH, ML, MR, MB, CW, TEXT, WHITE, BORDER } = ctx;
 
-  const PW = 210, PH = 297, ML = 15, MR = 15, MB = 22, CW = PW - ML - MR;
-  const BLUE   = BRAND.GUIDE_ACC;
-  const WHITE  = [255, 255, 255];
-  const TEXT   = [26, 29, 46];
-  const MUTED  = [107, 114, 128];
-  const BORDER = [229, 231, 235];
+  const reg    = DOC_REGISTRY.changelog;
+  const BLUE   = reg.accentRGB;
   const BG_ALT = [248, 250, 252];
 
-  // Data+Tipo(32) | Conteúdo(148) = 180mm
-  const COL = {
-    date:    { x: ML,      w: 32 },
-    content: { x: ML + 32, w: CW - 32 },
-  };
-
-  let page = 1, y = 0;
-
-  function setColor(rgb, type = 'fill') {
-    if (type === 'fill') doc.setFillColor(...rgb);
-    if (type === 'text') doc.setTextColor(...rgb);
-    if (type === 'draw') doc.setDrawColor(...rgb);
-  }
-
-  function safeText(str) {
-    return (str || '').replace(/['']/g, "'").replace(/[""]/g, '"');
-  }
-
-  function wrappedLines(text, maxW, size) {
-    doc.setFontSize(size);
-    return doc.splitTextToSize(safeText(text), maxW);
-  }
-
-  function lineHeight(size) { return size * 0.3528 * 1.4; }
-
-  function ensureSpace(needed) {
-    if (y + needed > PH - MB) {
-      drawFooter();
-      doc.addPage();
-      page++;
-      drawContinuationHeader();
-    }
-  }
-
-  function drawMainHeader() {
-    y = drawPDFSharedHeader(doc, data, BLUE, 'REGISTRO DE ALTERAÇÕES');
-  }
-
-  function drawContinuationHeader() {
-    setColor(BLUE, 'fill');
-    doc.rect(0, 0, PW, 11, 'F');
-
-    if (data.settings.showLogo && logoBase64) {
-      doc.addImage(logoBase64, 'PNG', ML, 1.5, 8, 8);
-    }
-
-    setColor(WHITE, 'text');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    const xT = data.settings.showLogo && logoBase64 ? ML + 11 : ML;
-    doc.text(safeText(data.doc.title || ''), xT, 7.5, { maxWidth: CW - 12 });
-
-    y = 18;
-  }
-
-  function drawFooter() {
-    if (!data.settings.showFooter && !data.settings.showPageNumbers) return;
-    const fy = PH - 20;
-    setColor(BLUE, 'draw');
-    doc.setLineWidth(0.3);
-    doc.line(ML, fy, PW - MR, fy);
-
-    if (data.settings.showFooter) {
-      setColor(BLUE, 'text');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.text('Matriz Betha Sistemas', ML, fy + 5);
-
-      setColor(MUTED, 'text');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.text('Rua Julio Gaidzinski, 320,', ML, fy + 9.5);
-      doc.text('88811-000, Pio Correa / Criciuma - SC', ML, fy + 13.5);
-
-      setColor(BLUE, 'text');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.text('48 3431-0733', PW - MR, fy + 5, { align: 'right' });
-
-      setColor(MUTED, 'text');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.text('Atendimento tecnico', PW - MR, fy + 9.5, { align: 'right' });
-
-      setColor(BLUE, 'text');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.text('0800 600 0735', PW - MR, fy + 13.5, { align: 'right' });
-    }
-
-    if (data.settings.showPageNumbers) {
-      setColor(MUTED, 'text');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      const pnY = data.settings.showFooter ? fy + 9.5 : fy + 5;
-      doc.text(`Pagina ${page}`, PW / 2, pnY, { align: 'center' });
-    }
-  }
-
-  function drawTableHeader() {
-    ensureSpace(11);
-    setColor(BLUE, 'fill');
-    doc.rect(ML, y, CW, 11, 'F');
-
-    setColor(WHITE, 'text');
-    doc.setFont('helvetica', 'bold');
-
-    // "TIPO" centralizado na coluna esquerda
-    const dateColCx = COL.date.x + COL.date.w / 2;
-    doc.setFontSize(7.5);
-    doc.text('TIPO', dateColCx, y + 6, { align: 'center' });
-
-    // "DESCRIÇÃO" alinhado ao início da coluna de conteúdo
-    doc.setFontSize(8);
-    doc.text('DESCRIÇÃO', COL.content.x + 3, y + 6.5);
-
-    y += 11;
-
-    setColor(BORDER, 'draw');
-    doc.setLineWidth(0.2);
-    doc.line(ML, y, ML + CW, y);
-  }
+  const COL = { date: { x: ML, w: 32 }, content: { x: ML + 32, w: CW - 32 } };
 
   const TYPE_CFG = {
     addition:    { bg: [209, 250, 229], text: [6, 95, 70],   label: 'Criação' },
@@ -913,70 +836,79 @@ async function buildChangelogDocPDF(data) {
     security:    { bg: [243, 244, 246], text: [55, 65, 81],  label: 'Segurança' },
   };
 
+  let page = 1, y = 0;
+
+  function ensureSpace(needed) {
+    if (y + needed > PH - MB) {
+      drawPDFFooter(doc, ctx, data, BLUE, page);
+      doc.addPage(); page++;
+      y = drawPDFContinuationHeader(doc, ctx, data, reg.bgRGB);
+    }
+  }
+
+  function drawTableHeader() {
+    ensureSpace(11);
+    ctx.setColor(BLUE, 'fill');
+    doc.rect(ML, y, CW, 11, 'F');
+    ctx.setColor(WHITE, 'text');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('TIPO', COL.date.x + COL.date.w / 2, y + 6, { align: 'center' });
+    doc.setFontSize(8);
+    doc.text('DESCRIÇÃO', COL.content.x + 3, y + 6.5);
+    y += 11;
+    ctx.setColor(BORDER, 'draw');
+    doc.setLineWidth(0.2);
+    doc.line(ML, y, ML + CW, y);
+  }
+
   function drawTableRow(entry, isAlt) {
     const contentX = COL.content.x + 3;
     const contentW = COL.content.w - 6;
 
-    // Calcular linhas do título e descrição
-    const titleLines = wrappedLines(entry.title || '—', contentW, 9.5);
-    const titleH     = titleLines.length * lineHeight(9.5);
-
-    const descText  = (entry.desc || '').trim();
-    const descLines = descText ? wrappedLines(descText, contentW, 9) : [];
-    const descH     = descLines.length * lineHeight(9);
-
-    const contentH = titleH + (descH > 0 ? 3 + descH : 0);
-    const rowH     = Math.max(16, contentH + 8);
+    const titleLines = ctx.wrappedLines(entry.title || '—', contentW, 9.5);
+    const titleH     = titleLines.length * ctx.lineHeight(9.5);
+    const descText   = (entry.desc || '').trim();
+    const descLines  = descText ? ctx.wrappedLines(descText, contentW, 9) : [];
+    const rowH       = Math.max(16, titleH + (descLines.length > 0 ? 3 + descLines.length * ctx.lineHeight(9) : 0) + 8);
 
     ensureSpace(rowH + 1);
 
-    // Fundo alternado
-    if (isAlt) {
-      setColor(BG_ALT, 'fill');
-      doc.rect(ML, y, CW, rowH, 'F');
-    }
+    if (isAlt) { ctx.setColor(BG_ALT, 'fill'); doc.rect(ML, y, CW, rowH, 'F'); }
 
-    // Linha separadora inferior
-    setColor(BORDER, 'draw');
+    ctx.setColor(BORDER, 'draw');
     doc.setLineWidth(0.2);
     doc.line(ML, y + rowH, ML + CW, y + rowH);
 
-    const startY = y + 5;
-
-    // ── Coluna TIPO DE OPERAÇÃO (badge centralizado verticalmente) ──
-    const cfg    = TYPE_CFG[entry.type] || TYPE_CFG['change'];
+    const cfg    = TYPE_CFG[entry.type] || TYPE_CFG.change;
     const labelW = cfg.label.length * 1.85 + 5;
     const badgeX = COL.date.x + (COL.date.w - labelW) / 2;
     const badgeY = y + (rowH - 5.5) / 2;
-    setColor(cfg.bg, 'fill');
+    ctx.setColor(cfg.bg, 'fill');
     doc.roundedRect(badgeX, badgeY, labelW, 5.5, 1.5, 1.5, 'F');
-    setColor(cfg.text, 'text');
+    ctx.setColor(cfg.text, 'text');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.text(cfg.label, badgeX + labelW / 2, badgeY + 3.8, { align: 'center' });
 
-    // ── Coluna CONTEÚDO ───────────────────────
-    // Título em negrito
-    setColor(TEXT, 'text');
+    ctx.setColor(TEXT, 'text');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9.5);
-    doc.text(titleLines, contentX, startY);
+    doc.text(titleLines, contentX, y + 5);
 
-    // Descrição como lista logo abaixo do título
     if (descLines.length > 0) {
-      setColor([55, 65, 81], 'text');
+      ctx.setColor([55, 65, 81], 'text');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      doc.text(descLines, contentX, startY + titleH + 3);
+      doc.text(descLines, contentX, y + 5 + titleH + 3);
     }
-
     y += rowH + 1;
   }
 
-  drawMainHeader();
+  y = drawPDFSharedHeader(doc, data, BLUE, reg.label);
   drawTableHeader();
   data.entries.forEach((entry, i) => drawTableRow(entry, i % 2 === 1));
-  drawFooter();
+  drawPDFFooter(doc, ctx, data, BLUE, page);
 
   doc.save(`registro-${pdfFilename(data.doc.title)}.pdf`);
   showToast('PDF gerado com sucesso!', 'success');
@@ -1059,11 +991,7 @@ async function generateWord() {
   showToast('Gerando Word…');
 
   try {
-    if (currentDocType === 'changelog') {
-      await buildChangelogDocWord(data);
-    } else {
-      await buildSectionedDocWord(data);
-    }
+    await DOC_REGISTRY[currentDocType].buildWord(data);
   } catch (err) {
     console.error(err);
     showToast('Erro ao gerar o Word. Veja o console para detalhes.', 'error');
@@ -1143,45 +1071,11 @@ function makeWordHeader(D, accentHex, showLogo) {
 
 async function buildSectionedDocWord(data) {
   const D = window.docx;
-  const isTech  = data.doc.type === 'technical';
-  const ACCENT  = isTech ? '0D9478' : '586EAC';
-  const TYPE_LBL = isTech
-    ? 'DOCUMENTAÇÃO TÉCNICA • BETHA SISTEMAS'
-    : 'GUIA PASSO A PASSO • BETHA SISTEMAS';
-
-  const ALERTS = isTech ? {
-    info:    { fill: 'F0FDF9', border: '0D9488', label: 'NOTA' },
-    warning: { fill: 'FFFBEB', border: 'D97706', label: 'AVISO' },
-    danger:  { fill: 'FFF7F0', border: 'EA580C', label: 'IMPORTANTE' },
-  } : {
-    info:    { fill: 'EFF6FF', border: '2563EB', label: 'DICA' },
-    warning: { fill: 'FFFBEB', border: 'D97706', label: 'ATENCAO' },
-    danger:  { fill: 'FFF5F5', border: 'DC2626', label: 'CRITICO' },
-  };
-
-  const NONE = { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
-
-  function makeMetaTable(items) {
-    if (!items.length) return [];
-    return [
-      new D.Table({
-        width: { size: 100, type: D.WidthType.PERCENTAGE },
-        borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideH: NONE, insideV: NONE },
-        rows: [new D.TableRow({
-          children: [new D.TableCell({
-            shading: { fill: 'F8FAFC', type: D.ShadingType.CLEAR, color: 'auto' },
-            borders: { top: { style: D.BorderStyle.SINGLE, size: 4, color: ACCENT, space: 1 }, bottom: NONE, left: NONE, right: NONE },
-            margins: { top: 80, bottom: 80, left: 120, right: 120 },
-            children: items.map(item => new D.Paragraph({
-              children: [new D.TextRun({ text: item, size: 18, color: '374151' })],
-              spacing: { before: 40, after: 40 },
-            })),
-          })],
-        })],
-      }),
-      new D.Paragraph({ spacing: { after: 320 }, children: [] }),
-    ];
-  }
+  const reg      = DOC_REGISTRY[data.doc.type] || DOC_REGISTRY.guide;
+  const ACCENT   = reg.accentHex;
+  const TYPE_LBL = reg.wordTypeLabel;
+  const ALERTS   = reg.alertWordCfg;
+  const NONE     = { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
 
   function makeAlertTable(alertType, alertText) {
     const cfg = ALERTS[alertType];
@@ -1243,14 +1137,7 @@ async function buildSectionedDocWord(data) {
   }));
 
   // Metadados
-  const metaItems = [
-    data.doc.entity && `Entidade: ${data.doc.entity}`,
-    data.doc.module && `Modulo: ${data.doc.module}`,
-    data.doc.author && `Responsavel: ${data.doc.author}`,
-    data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
-    data.doc.ticket && `Chamado: ${data.doc.ticket}`,
-  ].filter(Boolean);
-  children.push(...makeMetaTable(metaItems));
+  children.push(...makeWordMetaTable(D, ACCENT, collectWordMetaItems(data)));
 
   // Seções
   for (const [sIdx, section] of data.sections.entries()) {
@@ -1356,32 +1243,7 @@ async function buildChangelogDocWord(data) {
   }));
 
   // Metadados
-  const metaItems = [
-    data.doc.entity && `Entidade: ${data.doc.entity}`,
-    data.doc.module && `Modulo: ${data.doc.module}`,
-    data.doc.author && `Responsavel: ${data.doc.author}`,
-    data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
-    data.doc.ticket && `Chamado: ${data.doc.ticket}`,
-  ].filter(Boolean);
-
-  if (metaItems.length) {
-    children.push(new D.Table({
-      width: { size: 100, type: D.WidthType.PERCENTAGE },
-      borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideH: NONE, insideV: NONE },
-      rows: [new D.TableRow({
-        children: [new D.TableCell({
-          shading: { fill: 'F8FAFC', type: D.ShadingType.CLEAR, color: 'auto' },
-          borders: { top: { style: D.BorderStyle.SINGLE, size: 4, color: BLUE, space: 1 }, bottom: NONE, left: NONE, right: NONE },
-          margins: { top: 80, bottom: 80, left: 120, right: 120 },
-          children: metaItems.map(item => new D.Paragraph({
-            children: [new D.TextRun({ text: item, size: 18, color: '374151' })],
-            spacing: { before: 40, after: 40 },
-          })),
-        })],
-      })],
-    }));
-    children.push(new D.Paragraph({ spacing: { after: 320 }, children: [] }));
-  }
+  children.push(...makeWordMetaTable(D, BLUE, collectWordMetaItems(data)));
 
   // Tabela
   const tableRows = [];
