@@ -606,9 +606,9 @@ function collectData() {
   };
 
   const settings = {
-    showLogo:        document.getElementById('show-logo').checked,
-    showFooter:      document.getElementById('show-footer').checked,
-    showPageNumbers: document.getElementById('show-page-numbers').checked,
+    showLogo:        true,
+    showFooter:      true,
+    showPageNumbers: true,
   };
 
   if (currentDocType === 'changelog') {
