@@ -166,41 +166,45 @@
           </div>
         </div>
 
-        <!-- Guia de Orientações Técnicas -->
-        <div class="type-option" data-type="technical">
+        <!-- Relatório Operacional -->
+        <div class="type-option" data-type="operational">
           <div class="type-option-top">
-            <div class="type-option-icon">⚙️</div>
+            <div class="type-option-icon">🔧</div>
             <div class="type-option-text">
-              <div class="type-option-name">Guia de Orientações Técnicas</div>
-              <div class="type-option-desc">Documentação técnica com blocos de código, notas e avisos para equipes de desenvolvimento e suporte</div>
+              <div class="type-option-name">Relatório Operacional</div>
+              <div class="type-option-desc">Registro de ajustes realizados em visita técnica com lista de itens, conclusão e assinatura do cliente</div>
             </div>
             <div class="type-check-mark">
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
           </div>
           <div class="doc-preview">
-            <div class="dp-hdr dp-hdr-dark">
+            <div class="dp-hdr dp-hdr-blue">
               <div class="dp-logo"></div>
               <div class="dp-hlines">
-                <div class="dp-l dp-bold dp-w65 dp-on-dark"></div>
-                <div class="dp-l dp-fade dp-w40 dp-on-dark-dim"></div>
+                <div class="dp-l dp-bold dp-w65"></div>
+                <div class="dp-l dp-fade dp-w40"></div>
               </div>
             </div>
             <div class="dp-body">
               <div class="dp-section-row">
-                <div class="dp-bar dp-bar-teal"></div>
-                <div class="dp-l dp-w50 dp-colored-teal"></div>
+                <div class="dp-bar dp-bar-blue"></div>
+                <div class="dp-l dp-w50 dp-colored-blue"></div>
               </div>
-              <div class="dp-para">
+              <div class="dp-bullet-list">
+                <div class="dp-bullet-item"><div class="dp-dot"></div><div class="dp-l dp-w80"></div></div>
+                <div class="dp-bullet-item"><div class="dp-dot"></div><div class="dp-l dp-w65"></div></div>
+                <div class="dp-bullet-item"><div class="dp-dot"></div><div class="dp-l dp-w75"></div></div>
+              </div>
+              <div class="dp-conclusion-box">
+                <div class="dp-l dp-w55" style="background:#3D5AF1;opacity:.7;height:3px"></div>
                 <div class="dp-l dp-w90"></div>
-                <div class="dp-l dp-fade dp-w75"></div>
+                <div class="dp-l dp-w75"></div>
               </div>
-              <div class="dp-code-block">
-                <div class="dp-cl dp-w60"></div>
-                <div class="dp-cl dp-w80"></div>
-                <div class="dp-cl dp-w45"></div>
+              <div class="dp-sig-block">
+                <div class="dp-sig-line"><div class="dp-sig-underline"></div><div class="dp-l dp-w90" style="background:#D1D5DB;margin-top:3px"></div></div>
+                <div class="dp-sig-line"><div class="dp-sig-underline"></div><div class="dp-l dp-w90" style="background:#D1D5DB;margin-top:3px"></div></div>
               </div>
-              <div class="dp-alert-strip dp-note-strip"></div>
             </div>
             <div class="dp-footer"></div>
           </div>
@@ -308,6 +312,72 @@
           <p class="empty-hint">Clique em "Adicionar Entrada" para começar.</p>
         </div>
       </div>
+    </section>
+
+    <!-- Ajustes Realizados (Relatório Operacional) -->
+    <section class="card" id="operational-sections-card" style="display:none">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+          </div>
+          <div>
+            <h2>Ajustes Realizados</h2>
+            <p class="card-desc">Organize os itens ajustados por categoria em lista de pontos</p>
+          </div>
+        </div>
+        <button class="btn btn-outline" id="btn-add-op-section">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar Categoria
+        </button>
+      </div>
+      <div id="op-sections-container">
+        <div class="empty-state" id="empty-op-sections">
+          <div class="empty-icon">🔧</div>
+          <p>Nenhuma categoria criada ainda.</p>
+          <p class="empty-hint">Clique em "Adicionar Categoria" para começar.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Conclusão e Assinaturas (Relatório Operacional) -->
+    <section class="card" id="operational-extras-card" style="display:none">
+
+      <!-- Conclusão -->
+      <div class="op-extras-section">
+        <div class="op-sub-header">
+          <div class="op-sub-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <h3>Conclusão</h3>
+        </div>
+        <textarea id="op-conclusion" placeholder="Descreva o resultado geral da visita técnica, validações realizadas e observações finais..." rows="5"></textarea>
+      </div>
+
+      <!-- Assinaturas -->
+      <div class="op-extras-section">
+        <div class="op-sub-header">
+          <div class="op-sub-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+          </div>
+          <h3>Assinaturas</h3>
+        </div>
+        <div class="op-sig-grid">
+          <div class="form-group">
+            <label for="sig-name1">Consultor Betha</label>
+            <input type="text" id="sig-name1" placeholder="Ex: Artur Cadorin" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="sig-name2">Responsável pelo Cliente</label>
+            <input type="text" id="sig-name2" placeholder="Ex: João da Silva" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="sig-city">Cidade / Estado</label>
+            <input type="text" id="sig-city" placeholder="Ex: Criciúma/SC" autocomplete="off">
+          </div>
+        </div>
+      </div>
+
     </section>
 
     <!-- Configurações -->

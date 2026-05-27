@@ -5,6 +5,7 @@
 let sectionCounter = 0;
 let stepCounter = 0;
 let entryCounter = 0;
+let opSectionCounter = 0;
 let currentDocType = 'guide';
 let logoBase64 = null;
 
@@ -41,24 +42,13 @@ const DOC_REGISTRY = {
     buildPDF:  (data) => buildSectionedDocPDF(data),
     buildWord: (data) => buildSectionedDocWord(data),
   },
-  technical: {
-    label:        'DOCUMENTAÇÃO TÉCNICA',
-    accentRGB:    BRAND.TECH_ACC,
-    bgRGB:        BRAND.TECH_BG,
-    accentHex:    '0D9478',
-    wordTypeLabel:'DOCUMENTAÇÃO TÉCNICA • BETHA SISTEMAS',
-    alertCfg: {
-      info:    { fill: [243, 253, 251], border: [13, 148, 136], label: 'Nota' },
-      warning: { fill: [255, 253, 242], border: [217, 119, 6],  label: 'Aviso' },
-      danger:  { fill: [255, 249, 240], border: [234, 88, 12],  label: 'Importante' },
-    },
-    alertWordCfg: {
-      info:    { fill: 'F0FDF9', border: '0D9488', label: 'NOTA' },
-      warning: { fill: 'FFFBEB', border: 'D97706', label: 'AVISO' },
-      danger:  { fill: 'FFF7F0', border: 'EA580C', label: 'IMPORTANTE' },
-    },
-    buildPDF:  (data) => buildSectionedDocPDF(data),
-    buildWord: (data) => buildSectionedDocWord(data),
+  operational: {
+    label:     'RELATÓRIO OPERACIONAL',
+    accentRGB: BRAND.GUIDE_ACC,
+    bgRGB:     BRAND.GUIDE_BG,
+    accentHex: '586EAC',
+    buildPDF:  (data) => buildOperationalDocPDF(data),
+    buildWord: (data) => buildOperationalDocWord(data),
   },
   changelog: {
     label:     'REGISTRO DE ALTERAÇÕES',
@@ -211,6 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-add-section').addEventListener('click', addSection);
   document.getElementById('btn-add-entry').addEventListener('click', addEntry);
+  document.getElementById('btn-add-op-section').addEventListener('click', addOpSection);
   document.getElementById('btn-generate-nav').addEventListener('click', generate);
   document.getElementById('btn-generate-main').addEventListener('click', generate);
 
@@ -218,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('sections-container').addEventListener('change', handleContainerChange);
   document.getElementById('entries-container').addEventListener('click', handleEntriesClick);
   document.getElementById('entries-container').addEventListener('input', handleEntriesInput);
+  document.getElementById('op-sections-container').addEventListener('click', handleOpContainerClick);
 
   document.querySelectorAll('.type-option').forEach(card => {
     card.addEventListener('click', () => selectDocType(card.dataset.type));
@@ -238,50 +230,27 @@ function selectDocType(type) {
     c.classList.toggle('active', c.dataset.type === type)
   );
 
-  const sectionsCard  = document.getElementById('sections-card');
-  const changelogCard = document.getElementById('changelog-card');
+  const sectionsCard   = document.getElementById('sections-card');
+  const changelogCard  = document.getElementById('changelog-card');
+  const opSectionsCard = document.getElementById('operational-sections-card');
+  const opExtrasCard   = document.getElementById('operational-extras-card');
 
-  if (type === 'changelog') {
-    sectionsCard.style.display  = 'none';
-    changelogCard.style.display = '';
-    if (!document.querySelector('.changelog-entry')) addEntry();
-  } else {
-    sectionsCard.style.display  = '';
-    changelogCard.style.display = 'none';
-    if (!document.querySelector('.section-block')) addSection();
+  sectionsCard.style.display   = type === 'guide'       ? '' : 'none';
+  changelogCard.style.display  = type === 'changelog'   ? '' : 'none';
+  opSectionsCard.style.display = type === 'operational' ? '' : 'none';
+  opExtrasCard.style.display   = type === 'operational' ? '' : 'none';
 
-    const title = type === 'technical' ? 'Seções e Conteúdo' : 'Seções e Passos';
-    const desc  = type === 'technical'
-      ? 'Organize o conteúdo técnico em seções com blocos de texto e código'
-      : 'Organize o conteúdo em seções com passos numerados';
-    document.getElementById('sections-card-title').textContent = title;
-    document.getElementById('sections-card-desc').textContent  = desc;
-
-    updateStepAlertLabels(type);
-  }
+  if (type === 'guide'       && !document.querySelector('.section-block'))      addSection();
+  if (type === 'changelog'   && !document.querySelector('.changelog-entry'))    addEntry();
+  if (type === 'operational' && !document.querySelector('.op-section-block'))   addOpSection();
 }
 
-function getAlertOptions(type) {
-  if (type === 'technical') {
-    return `
-      <option value="">Sem nota</option>
-      <option value="info">📌 Nota</option>
-      <option value="warning">⚠️ Aviso</option>
-      <option value="danger">⚡ Importante</option>`;
-  }
+function getAlertOptions() {
   return `
     <option value="">Sem alerta</option>
     <option value="info">💡 Dica</option>
     <option value="warning">⚠️ Atenção</option>
     <option value="danger">🚨 Crítico</option>`;
-}
-
-function updateStepAlertLabels(type) {
-  document.querySelectorAll('.step-alert-select').forEach(sel => {
-    const val = sel.value;
-    sel.innerHTML = getAlertOptions(type);
-    sel.value = val;
-  });
 }
 
 // ── Event delegation – sections ───────────
@@ -404,7 +373,7 @@ function addStep(sid) {
     <div class="step-content">
       <textarea class="step-text" placeholder="Descreva este passo com clareza..." rows="2"></textarea>
       <div class="step-opts">
-        <select class="step-alert-select">${getAlertOptions(currentDocType)}</select>
+        <select class="step-alert-select">${getAlertOptions()}</select>
         <button class="btn-icon btn-add-image" type="button">🖼 Imagem</button>
         <button class="btn-icon danger btn-remove-step" type="button" title="Remover passo">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -533,6 +502,96 @@ function removeEntry(el) {
   }, 150);
 }
 
+// ── Operational sections ──────────────────
+
+function addOpSection() {
+  document.querySelectorAll('.op-section-block').forEach(s => s.classList.add('collapsed'));
+
+  opSectionCounter++;
+  const sid = `ops${opSectionCounter}`;
+
+  const el = document.createElement('div');
+  el.className = 'op-section-block';
+  el.dataset.sid = sid;
+  el.innerHTML = `
+    <div class="op-section-head">
+      <input type="text" class="op-section-title-input" placeholder="Título da categoria (ex: Ajustes em Eventos)">
+      <div class="op-section-actions">
+        <button class="btn-icon btn-add-op-item" title="Adicionar item">+ Item</button>
+        <button class="btn-icon btn-toggle-op-section" title="Minimizar / Expandir">
+          <svg class="toggle-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <button class="btn-icon danger btn-remove-op-section" title="Remover categoria">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="op-section-body">
+      <div class="op-items-wrap" id="op-items-${sid}"></div>
+      <div><button class="btn btn-ghost btn-sm btn-add-op-item">+ Adicionar Item</button></div>
+    </div>
+  `;
+
+  const container = document.getElementById('op-sections-container');
+  const empty = document.getElementById('empty-op-sections');
+  if (empty) empty.remove();
+  container.appendChild(el);
+
+  addOpItem(sid);
+}
+
+function removeOpSection(el) {
+  el.style.opacity = '0';
+  el.style.transform = 'scale(.97)';
+  el.style.transition = 'opacity .2s, transform .2s';
+  setTimeout(() => {
+    el.remove();
+    if (!document.querySelector('.op-section-block')) {
+      document.getElementById('op-sections-container').innerHTML =
+        `<div class="empty-state" id="empty-op-sections">
+          <div class="empty-icon">🔧</div>
+          <p>Nenhuma categoria criada ainda.</p>
+          <p class="empty-hint">Clique em "Adicionar Categoria" para começar.</p>
+        </div>`;
+    }
+  }, 200);
+}
+
+function addOpItem(sid) {
+  const itemsWrap = document.getElementById(`op-items-${sid}`);
+  const el = document.createElement('div');
+  el.className = 'op-item-row';
+  el.innerHTML = `
+    <div class="op-item-bullet"></div>
+    <input type="text" class="op-item-input" placeholder="Descreva o item ajustado...">
+    <button class="btn-icon danger btn-remove-op-item" title="Remover item">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  `;
+  itemsWrap.appendChild(el);
+  el.querySelector('.op-item-input').focus();
+}
+
+function handleOpContainerClick(e) {
+  const t = e.target;
+  if (t.closest('.btn-toggle-op-section')) {
+    t.closest('.op-section-block').classList.toggle('collapsed');
+    return;
+  }
+  if (t.closest('.btn-remove-op-section')) {
+    removeOpSection(t.closest('.op-section-block'));
+    return;
+  }
+  if (t.closest('.btn-add-op-item')) {
+    addOpItem(t.closest('.op-section-block').dataset.sid);
+    return;
+  }
+  if (t.closest('.btn-remove-op-item')) {
+    t.closest('.op-item-row').remove();
+    return;
+  }
+}
+
 // ── Data collection ───────────────────────
 
 function collectData() {
@@ -564,6 +623,30 @@ function collectData() {
     return { doc, settings, entries };
   }
 
+  if (currentDocType === 'operational') {
+    const opSections = [];
+    document.querySelectorAll('.op-section-block').forEach(secEl => {
+      const items = [];
+      secEl.querySelectorAll('.op-item-input').forEach(inp => {
+        if (inp.value.trim()) items.push(inp.value.trim());
+      });
+      opSections.push({
+        title: secEl.querySelector('.op-section-title-input').value.trim(),
+        items,
+      });
+    });
+    return {
+      doc, settings,
+      opSections,
+      conclusion: (document.getElementById('op-conclusion').value || '').trim(),
+      signatures: {
+        name1: document.getElementById('sig-name1').value.trim(),
+        name2: document.getElementById('sig-name2').value.trim(),
+        city:  document.getElementById('sig-city').value.trim(),
+      },
+    };
+  }
+
   const sections = [];
   document.querySelectorAll('.section-block').forEach(secEl => {
     const steps = [];
@@ -571,7 +654,7 @@ function collectData() {
       steps.push({
         text:      stepEl.querySelector('.step-text').value.trim(),
         alertType: stepEl.querySelector('.step-alert-select').value,
-        alertText: stepEl.querySelector('.step-alert-input').value.trim(),
+        alertText: stepEl.querySelector('.step-alert-input')?.value.trim() || '',
         image:     stepEl.dataset.img || null,
       });
     });
@@ -598,6 +681,12 @@ async function generate() {
   if (currentDocType === 'changelog') {
     if (!data.entries || data.entries.length === 0) {
       showToast('Adicione pelo menos uma entrada de alteração.', 'error');
+      return;
+    }
+  } else if (currentDocType === 'operational') {
+    const hasItems = data.opSections && data.opSections.some(s => s.items.length > 0);
+    if (!hasItems) {
+      showToast('Adicione pelo menos um item de ajuste.', 'error');
       return;
     }
   } else {
@@ -916,6 +1005,16 @@ async function buildChangelogDocPDF(data) {
 
 // ── Utilities ─────────────────────────────
 
+function formatDateLong(dateStr) {
+  if (!dateStr) return '';
+  const months = [
+    'janeiro','fevereiro','março','abril','maio','junho',
+    'julho','agosto','setembro','outubro','novembro','dezembro',
+  ];
+  const [y, m, d] = dateStr.split('-');
+  return `${parseInt(d)} de ${months[parseInt(m) - 1]} de ${y}`;
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-');
@@ -979,6 +1078,12 @@ async function generateWord() {
   if (currentDocType === 'changelog') {
     if (!data.entries || data.entries.length === 0) {
       showToast('Adicione pelo menos uma entrada de alteração.', 'error');
+      return;
+    }
+  } else if (currentDocType === 'operational') {
+    const hasItems = data.opSections && data.opSections.some(s => s.items.length > 0);
+    if (!hasItems) {
+      showToast('Adicione pelo menos um item de ajuste.', 'error');
       return;
     }
   } else {
@@ -1325,5 +1430,289 @@ async function buildChangelogDocWord(data) {
   const wordDoc = new D.Document({ sections: [{ properties: {}, children }] });
   const blob    = await D.Packer.toBlob(wordDoc);
   downloadBlob(blob, `registro-${pdfFilename(data.doc.title)}.docx`);
+  showToast('Word gerado com sucesso!', 'success');
+}
+
+// ── PDF: Relatório Operacional ────────────
+
+async function buildOperationalDocPDF(data) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  const ctx = createPDFCtx(doc);
+  const { PW, PH, ML, MR, MB, CW, TEXT, WHITE, BORDER, MUTED } = ctx;
+
+  const reg    = DOC_REGISTRY.operational;
+  const ACCENT = reg.accentRGB;
+
+  let page = 1, y = 0;
+
+  function ensureSpace(needed) {
+    if (y + needed > PH - MB) {
+      drawPDFFooter(doc, ctx, data, ACCENT, page);
+      doc.addPage(); page++;
+      y = drawPDFContinuationHeader(doc, ctx, data, reg.bgRGB);
+    }
+  }
+
+  function drawOpSection(section, index) {
+    ensureSpace(18);
+    ctx.setColor(ACCENT, 'fill');
+    doc.rect(ML, y, 3, 7, 'F');
+    ctx.setColor(ACCENT, 'text');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text(ctx.safeText(`${index + 1}. ${(section.title || 'Ajustes').toUpperCase()}`), ML + 5, y + 5.5);
+    y += 10;
+    ctx.setColor([210, 218, 234], 'draw');
+    doc.setLineWidth(0.3);
+    doc.line(ML, y, PW - MR, y);
+    y += 5;
+
+    section.items.forEach(item => {
+      if (!item) return;
+      const lines = ctx.wrappedLines(item, CW - 9, 10);
+      const h = lines.length * ctx.lineHeight(10);
+      ensureSpace(h + 5);
+      ctx.setColor(ACCENT, 'fill');
+      doc.circle(ML + 2.5, y + 2.5, 1.3, 'F');
+      ctx.setColor(TEXT, 'text');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(lines, ML + 6, y + 3.8);
+      y += h + 3.5;
+    });
+    y += 5;
+  }
+
+  function drawConclusion(text) {
+    if (!text) return;
+    ensureSpace(30);
+    ctx.setColor(ACCENT, 'fill');
+    doc.rect(ML, y, 3, 7, 'F');
+    ctx.setColor(ACCENT, 'text');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('CONCLUSÃO', ML + 5, y + 5.5);
+    y += 12;
+
+    const lines = ctx.wrappedLines(text, CW - 12, 10);
+    const boxH  = lines.length * ctx.lineHeight(10) + 14;
+    ensureSpace(boxH + 4);
+
+    ctx.setColor([248, 250, 252], 'fill');
+    doc.roundedRect(ML, y, CW, boxH, 2.5, 2.5, 'F');
+    ctx.setColor(ACCENT, 'draw');
+    doc.setLineWidth(0.4);
+    doc.roundedRect(ML, y, CW, boxH, 2.5, 2.5, 'S');
+    ctx.setColor(ACCENT, 'fill');
+    doc.roundedRect(ML, y, 3.5, boxH, 1.5, 1.5, 'F');
+
+    ctx.setColor(TEXT, 'text');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(lines, ML + 8, y + 9);
+    y += boxH + 10;
+  }
+
+  function drawSignatures(signatures) {
+    const lineW  = 74;
+    const leftX  = ML + 6;
+    const rightX = PW - MR - lineW - 6;
+    const boxH   = 38;
+
+    ensureSpace(boxH + 12);
+    y += 6;
+
+    ctx.setColor([248, 250, 252], 'fill');
+    doc.roundedRect(ML, y, CW, boxH, 2.5, 2.5, 'F');
+    ctx.setColor(BORDER, 'draw');
+    doc.setLineWidth(0.3);
+    doc.roundedRect(ML, y, CW, boxH, 2.5, 2.5, 'S');
+
+    ctx.setColor([148, 158, 178], 'draw');
+    doc.setLineWidth(0.5);
+    doc.line(leftX,  y + 22, leftX  + lineW, y + 22);
+    doc.line(rightX, y + 22, rightX + lineW, y + 22);
+
+    ctx.setColor(MUTED, 'text');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    if (signatures.name1) {
+      doc.text(ctx.safeText(signatures.name1), leftX + lineW / 2, y + 27.5, { align: 'center' });
+    }
+    if (signatures.name2) {
+      doc.text(ctx.safeText(signatures.name2), rightX + lineW / 2, y + 27.5, { align: 'center' });
+    }
+
+    const cityDate = [
+      signatures.city && ctx.safeText(signatures.city),
+      data.doc.date ? formatDateLong(data.doc.date) : '',
+    ].filter(Boolean).join(', ');
+    if (cityDate) {
+      doc.setFontSize(8);
+      doc.text(cityDate, PW / 2, y + 34, { align: 'center' });
+    }
+    y += boxH + 8;
+  }
+
+  y = drawPDFSharedHeader(doc, data, ACCENT, reg.label);
+  data.opSections.forEach((section, i) => drawOpSection(section, i));
+  drawConclusion(data.conclusion);
+  const sig = data.signatures;
+  if (sig.name1 || sig.name2 || sig.city) drawSignatures(sig);
+  drawPDFFooter(doc, ctx, data, ACCENT, page);
+
+  doc.save(`relatorio-${pdfFilename(data.doc.title)}.pdf`);
+  showToast('PDF gerado com sucesso!', 'success');
+}
+
+// ── Word: Relatório Operacional ───────────
+
+async function buildOperationalDocWord(data) {
+  const D    = window.docx;
+  const reg  = DOC_REGISTRY.operational;
+  const BLUE = reg.accentHex;
+  const NONE = { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const BDR_BLUE = { style: D.BorderStyle.SINGLE, size: 4, color: BLUE, space: 1 };
+
+  const children = [];
+
+  const _hdr = makeWordHeader(D, BLUE, data.settings.showLogo);
+  if (_hdr) { children.push(_hdr); children.push(new D.Paragraph({ spacing: { after: 160 }, children: [] })); }
+
+  children.push(new D.Paragraph({
+    children: [new D.TextRun({ text: 'RELATÓRIO OPERACIONAL • BETHA SISTEMAS', size: 16, color: '6B7280' })],
+    spacing: { after: 80 },
+  }));
+
+  children.push(new D.Paragraph({
+    children: [new D.TextRun({ text: data.doc.title || 'Documento', bold: true, size: 52, color: BLUE })],
+    spacing: { after: 240 },
+  }));
+
+  children.push(new D.Paragraph({
+    border: { bottom: { style: D.BorderStyle.SINGLE, size: 8, color: BLUE, space: 1 } },
+    spacing: { after: 200 },
+    children: [],
+  }));
+
+  children.push(...makeWordMetaTable(D, BLUE, collectWordMetaItems(data)));
+
+  // Seções de ajuste
+  data.opSections.forEach((section, sIdx) => {
+    children.push(new D.Paragraph({
+      border: { left: { style: D.BorderStyle.THICK, size: 14, color: BLUE, space: 4 } },
+      spacing: { before: 360, after: 160 },
+      children: [new D.TextRun({ text: `  ${sIdx + 1}. ${(section.title || 'Ajustes').toUpperCase()}`, bold: true, size: 24, color: BLUE })],
+    }));
+    section.items.forEach(item => {
+      if (!item) return;
+      children.push(new D.Paragraph({
+        bullet: { level: 0 },
+        spacing: { before: 60, after: 60 },
+        children: [new D.TextRun({ text: item, size: 21, color: '1A1D2E' })],
+      }));
+    });
+    children.push(new D.Paragraph({ spacing: { after: 80 }, children: [] }));
+  });
+
+  // Conclusão
+  if (data.conclusion) {
+    children.push(new D.Paragraph({
+      border: { left: { style: D.BorderStyle.THICK, size: 14, color: BLUE, space: 4 } },
+      spacing: { before: 360, after: 200 },
+      children: [new D.TextRun({ text: '  CONCLUSÃO', bold: true, size: 24, color: BLUE })],
+    }));
+    children.push(new D.Table({
+      width: { size: 100, type: D.WidthType.PERCENTAGE },
+      borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideH: NONE, insideV: NONE },
+      rows: [new D.TableRow({
+        children: [new D.TableCell({
+          shading: { fill: 'F8FAFC', type: D.ShadingType.CLEAR, color: 'auto' },
+          borders: { top: BDR_BLUE, bottom: BDR_BLUE, left: BDR_BLUE, right: BDR_BLUE },
+          margins: { top: 120, bottom: 120, left: 200, right: 200 },
+          children: data.conclusion.split('\n').filter(Boolean).map(line =>
+            new D.Paragraph({
+              children: [new D.TextRun({ text: line, size: 21, color: '1A1D2E' })],
+              spacing: { before: 40, after: 40 },
+            })
+          ),
+        })],
+      })],
+    }));
+    children.push(new D.Paragraph({ spacing: { after: 320 }, children: [] }));
+  }
+
+  // Assinaturas
+  const { name1, name2, city } = data.signatures;
+  if (name1 || name2 || city) {
+    children.push(new D.Paragraph({ spacing: { before: 600 }, children: [] }));
+    children.push(new D.Table({
+      width: { size: 100, type: D.WidthType.PERCENTAGE },
+      borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideH: NONE, insideV: NONE },
+      rows: [
+        new D.TableRow({
+          children: [
+            new D.TableCell({
+              width: { size: 45, type: D.WidthType.PERCENTAGE },
+              borders: { top: NONE, left: NONE, right: NONE, bottom: { style: D.BorderStyle.SINGLE, size: 6, color: '6B7280', space: 1 } },
+              margins: { bottom: 80, left: 60, right: 60 },
+              children: [new D.Paragraph({ children: [] })],
+            }),
+            new D.TableCell({
+              width: { size: 10, type: D.WidthType.PERCENTAGE },
+              borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+              children: [new D.Paragraph({ children: [] })],
+            }),
+            new D.TableCell({
+              width: { size: 45, type: D.WidthType.PERCENTAGE },
+              borders: { top: NONE, left: NONE, right: NONE, bottom: { style: D.BorderStyle.SINGLE, size: 6, color: '6B7280', space: 1 } },
+              margins: { bottom: 80, left: 60, right: 60 },
+              children: [new D.Paragraph({ children: [] })],
+            }),
+          ],
+        }),
+        new D.TableRow({
+          children: [
+            new D.TableCell({
+              width: { size: 45, type: D.WidthType.PERCENTAGE },
+              borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+              margins: { top: 80, left: 60, right: 60 },
+              children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.TextRun({ text: name1 || '', size: 18, color: '374151' })] })],
+            }),
+            new D.TableCell({
+              width: { size: 10, type: D.WidthType.PERCENTAGE },
+              borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+              children: [new D.Paragraph({ children: [] })],
+            }),
+            new D.TableCell({
+              width: { size: 45, type: D.WidthType.PERCENTAGE },
+              borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+              margins: { top: 80, left: 60, right: 60 },
+              children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.TextRun({ text: name2 || '', size: 18, color: '374151' })] })],
+            }),
+          ],
+        }),
+      ],
+    }));
+
+    const cityDate = [city, data.doc.date ? formatDateLong(data.doc.date) : ''].filter(Boolean).join(', ');
+    if (cityDate) {
+      children.push(new D.Paragraph({
+        alignment: D.AlignmentType.CENTER,
+        spacing: { before: 200 },
+        children: [new D.TextRun({ text: cityDate, size: 18, color: '6B7280' })],
+      }));
+    }
+  }
+
+  if (data.settings.showFooter) {
+    children.push(new D.Paragraph({ spacing: { before: 480 }, children: [] }));
+    children.push(makeWordFooter(D, BLUE));
+  }
+
+  const wordDoc = new D.Document({ sections: [{ properties: {}, children }] });
+  const blob    = await D.Packer.toBlob(wordDoc);
+  downloadBlob(blob, `relatorio-${pdfFilename(data.doc.title)}.docx`);
   showToast('Word gerado com sucesso!', 'success');
 }

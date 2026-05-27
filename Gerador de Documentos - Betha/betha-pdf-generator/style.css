@@ -1058,3 +1058,181 @@ textarea::placeholder { color: #9CA3AF; }
 @media (max-width: 600px) {
   .type-selector { grid-template-columns: 1fr; }
 }
+
+/* ── Relatório Operacional ── */
+#op-sections-container {
+  padding: 16px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.op-section-block {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: fadeSlideIn .2s ease;
+}
+
+.op-section-block:focus-within { border-color: var(--primary); }
+
+.op-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--primary-faint);
+  border-bottom: 1px solid var(--border);
+}
+
+.op-section-title-input {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.op-section-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+.op-section-body { padding: 12px 16px 14px; }
+
+.op-section-block.collapsed .op-section-body { display: none; }
+
+.btn-toggle-op-section .toggle-arrow { transition: transform .2s; }
+.op-section-block.collapsed .btn-toggle-op-section .toggle-arrow { transform: rotate(-90deg); }
+
+.op-items-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.op-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: fadeSlideIn .15s ease;
+}
+
+.op-item-bullet {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  opacity: .5;
+  flex-shrink: 0;
+}
+
+.op-item-input {
+  flex: 1;
+  padding: 7px 11px !important;
+  font-size: 13px !important;
+}
+
+/* ── Card Extras (Conclusão + Assinaturas) ── */
+.op-extras-section {
+  padding: 20px 24px;
+}
+
+.op-extras-section + .op-extras-section {
+  border-top: 1px solid var(--border);
+  padding-top: 22px;
+}
+
+.op-sub-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.op-sub-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.op-sub-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#op-conclusion {
+  resize: vertical;
+  min-height: 100px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.op-sig-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── Preview: Relatório Operacional ── */
+.dp-bullet-list {
+  padding: 3px 0 1px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dp-bullet-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dp-dot {
+  width: 4px;
+  height: 4px;
+  min-width: 4px;
+  border-radius: 50%;
+  background: #3D5AF1;
+  opacity: .7;
+}
+
+.dp-conclusion-box {
+  margin: 3px 4px 0;
+  border: 1px solid #CBD5E1;
+  border-left: 3px solid #3D5AF1;
+  border-radius: 2px;
+  background: #F8FAFC;
+  padding: 3px 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dp-sig-block {
+  margin: 4px 6px 0;
+  display: flex;
+  gap: 10px;
+}
+
+.dp-sig-line {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dp-sig-underline { height: 1px; background: #9CA3AF; width: 100%; }
+
+@media (max-width: 768px) {
+  .op-sig-grid { grid-template-columns: 1fr; }
+}
