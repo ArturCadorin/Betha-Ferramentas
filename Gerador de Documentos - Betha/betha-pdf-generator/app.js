@@ -30,13 +30,13 @@ const DOC_REGISTRY = {
     wordTypeLabel:'GUIA PASSO A PASSO • BETHA SISTEMAS',
     alertCfg: {
       info:    { fill: [243, 248, 255], border: [37, 99, 235],  label: 'Dica' },
-      warning: { fill: [255, 253, 242], border: [217, 119, 6],  label: 'Atencao' },
-      danger:  { fill: [255, 245, 245], border: [220, 38, 38],  label: 'Critico' },
+      warning: { fill: [255, 253, 242], border: [217, 119, 6],  label: 'Atenção' },
+      danger:  { fill: [255, 245, 245], border: [220, 38, 38],  label: 'Crítico' },
     },
     alertWordCfg: {
       info:    { fill: 'EFF6FF', border: '2563EB', label: 'DICA' },
-      warning: { fill: 'FFFBEB', border: 'D97706', label: 'ATENCAO' },
-      danger:  { fill: 'FFF5F5', border: 'DC2626', label: 'CRITICO' },
+      warning: { fill: 'FFFBEB', border: 'D97706', label: 'ATENÇÃO' },
+      danger:  { fill: 'FFF5F5', border: 'DC2626', label: 'CRÍTICO' },
     },
     buildPDF:  (data) => buildSectionedDocPDF(data),
     buildWord: (data) => buildSectionedDocWord(data),
@@ -117,8 +117,8 @@ function drawPDFFooter(doc, ctx, data, accentRGB, page) {
     ctx.setColor(MUTED, 'text');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    doc.text('Rua Julio Gaidzinski, 320,', ML, fy + 9.5);
-    doc.text('88811-000, Pio Correa / Criciuma - SC', ML, fy + 13.5);
+    doc.text('Rua Júlio Gaidzinski, 320,', ML, fy + 9.5);
+    doc.text('88811-000, Pio Corrêa / Criciúma - SC', ML, fy + 13.5);
 
     ctx.setColor(accentRGB, 'text');
     doc.setFont('helvetica', 'bold');
@@ -128,7 +128,7 @@ function drawPDFFooter(doc, ctx, data, accentRGB, page) {
     ctx.setColor(MUTED, 'text');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    doc.text('Atendimento tecnico', PW - MR, fy + 9.5, { align: 'right' });
+    doc.text('Atendimento técnico', PW - MR, fy + 9.5, { align: 'right' });
 
     ctx.setColor(accentRGB, 'text');
     doc.setFont('helvetica', 'bold');
@@ -171,8 +171,8 @@ function drawPDFContinuationHeader(doc, ctx, data, bgRGB) {
 function collectWordMetaItems(data) {
   return [
     data.doc.entity && `Entidade: ${data.doc.entity}`,
-    data.doc.module && `Modulo: ${data.doc.module}`,
-    data.doc.author && `Responsavel: ${data.doc.author}`,
+    data.doc.module && `Módulo: ${data.doc.module}`,
+    data.doc.author && `Responsável: ${data.doc.author}`,
     data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
     data.doc.ticket && `Chamado: ${data.doc.ticket}`,
   ].filter(Boolean);
@@ -686,8 +686,8 @@ function drawPDFSharedHeader(doc, data, accentRGB, headerLabel) {
   // Metadados — mais próximos do título, fonte maior
   const metaParts = [
     data.doc.entity && `Entidade: ${data.doc.entity}`,
-    data.doc.module && `Modulo: ${data.doc.module}`,
-    data.doc.author && `Responsavel: ${data.doc.author}`,
+    data.doc.module && `Módulo: ${data.doc.module}`,
+    data.doc.author && `Responsável: ${data.doc.author}`,
     data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
     data.doc.ticket && `Chamado: ${data.doc.ticket}`,
   ].filter(Boolean);
@@ -1020,11 +1020,11 @@ function makeWordFooter(D, accentHex) {
               spacing: { after: 40 },
             }),
             new D.Paragraph({
-              children: [new D.TextRun({ text: 'Rua Julio Gaidzinski, 320,', size: 14, color: '6B7280' })],
+              children: [new D.TextRun({ text: 'Rua Júlio Gaidzinski, 320,', size: 14, color: '6B7280' })],
               spacing: { after: 20 },
             }),
             new D.Paragraph({
-              children: [new D.TextRun({ text: '88811-000, Pio Correa / Criciuma - SC', size: 14, color: '6B7280' })],
+              children: [new D.TextRun({ text: '88811-000, Pio Corrêa / Criciúma - SC', size: 14, color: '6B7280' })],
             }),
           ],
         }),
@@ -1040,7 +1040,7 @@ function makeWordFooter(D, accentHex) {
             }),
             new D.Paragraph({
               alignment: D.AlignmentType.RIGHT,
-              children: [new D.TextRun({ text: 'Atendimento tecnico', size: 14, color: '6B7280' })],
+              children: [new D.TextRun({ text: 'Atendimento técnico', size: 14, color: '6B7280' })],
               spacing: { after: 20 },
             }),
             new D.Paragraph({
