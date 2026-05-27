@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --input-type=module)",
+      "Bash(node -e \"require\\('fs'\\).readFileSync\\('app.js','utf8'\\)\")",
+      "Bash(node --check \"c:\\\\Users\\\\artur.cadorin\\\\Desktop\\\\Betha-Ferramentas\\\\Gerador de Documentos - Betha\\\\betha-pdf-generator\\\\app.js\")"
+    ]
+  }
+}

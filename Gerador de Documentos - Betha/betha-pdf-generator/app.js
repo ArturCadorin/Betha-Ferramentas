@@ -284,22 +284,10 @@ function addEntry() {
   el.dataset.eid = eid;
   el.innerHTML = `
     <div class="entry-top-row">
-      <div class="entry-field-group">
-        <label>Data</label>
-        <div class="date-input-wrap">
-          <input type="date" class="entry-date">
-          <svg class="date-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-        </div>
-      </div>
       <div class="entry-field-group entry-type-group">
         <label>Tipo</label>
         <select class="entry-type">
-          <option value="addition">✅ Adição</option>
+          <option value="addition">✅ Criação</option>
           <option value="fix">🔧 Correção</option>
           <option value="change">📝 Alteração</option>
           <option value="removal">🗑️ Remoção</option>
@@ -374,7 +362,6 @@ function collectData() {
     const entries = [];
     document.querySelectorAll('.changelog-entry').forEach(el => {
       entries.push({
-        date:  el.querySelector('.entry-date').value,
         type:  el.querySelector('.entry-type').value,
         title: el.querySelector('.entry-title').value.trim(),
         desc:  el.querySelector('.entry-desc').value.trim(),
@@ -456,7 +443,7 @@ async function buildSectionedDocPDF(data) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
-  const PW = 210, PH = 297, ML = 15, MR = 15, MB = 18, CW = PW - ML - MR;
+  const PW = 210, PH = 297, ML = 15, MR = 15, MB = 22, CW = PW - ML - MR;
 
   const isTech = data.doc.type === 'technical';
 
@@ -472,7 +459,7 @@ async function buildSectionedDocPDF(data) {
   } : {
     HEADER_BG: [61, 90, 241],
     ACCENT:    [61, 90, 241],
-    HEADER_LABEL: null,
+    HEADER_LABEL: 'GUIA PASSO A PASSO',
     ALERTS: {
       info:    { fill: [243, 248, 255], border: [37, 99, 235],  label: 'Dica' },
       warning: { fill: [255, 253, 242], border: [217, 119, 6],  label: 'Atencao'  },
@@ -514,54 +501,66 @@ async function buildSectionedDocPDF(data) {
   }
 
   function drawMainHeader() {
-    setColor(PALETTE.HEADER_BG, 'fill');
-    doc.rect(0, 0, PW, 52, 'F');
+    // ── Caixa do logo (bordada, fundo branco) ──
+    const boxX = ML, boxY = 8, boxW = 64, boxH = 22;
+    setColor(PALETTE.ACCENT, 'draw');
+    doc.setLineWidth(0.4);
+    doc.rect(boxX, boxY, boxW, boxH);
 
     if (data.settings.showLogo && logoBase64) {
-      doc.addImage(logoBase64, 'PNG', ML, 14, 14, 14);
+      doc.addImage(logoBase64, 'PNG', boxX + 3, boxY + 4, 18, 14);
     }
 
-    const xText = data.settings.showLogo && logoBase64 ? ML + 20 : ML;
+    const sloganX = data.settings.showLogo && logoBase64 ? boxX + 24 : boxX + 4;
+    setColor(PALETTE.ACCENT, 'text');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text('Tudo que a sua cidade', sloganX, boxY + 9.5);
+    doc.text('pode se tornar', sloganX, boxY + 14.5);
+
+    // ── Lado direito: tipo + título ──
+    const rX = boxX + boxW + 6;
+    const rW = PW - MR - rX;
 
     if (PALETTE.HEADER_LABEL) {
-      setColor([180, 220, 220], 'text');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.text(PALETTE.HEADER_LABEL, xText, 13);
+      setColor(MUTED, 'text');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text(PALETTE.HEADER_LABEL, rX, boxY + 6);
     }
 
-    setColor(WHITE, 'text');
+    setColor([20, 30, 70], 'text');
     doc.setFont('helvetica', 'bold');
-    const titleY = PALETTE.HEADER_LABEL ? 21 : 18;
-    const titleLines = wrappedLines(data.doc.title || 'Documento', CW - 22, 16);
-    doc.text(titleLines, xText, titleY);
+    doc.setFontSize(14);
+    const titleY = PALETTE.HEADER_LABEL ? boxY + 14 : boxY + 10;
+    const titleLines = wrappedLines(data.doc.title || 'Documento', rW, 14);
+    doc.text(titleLines, rX, titleY);
 
-    const entityPart = data.doc.entity ? `Entidade: ${data.doc.entity}` : null;
-    const row2Parts  = [
-      data.doc.module  && `Módulo: ${data.doc.module}`,
-      data.doc.author  && `Responsável: ${data.doc.author}`,
-      data.doc.date    && `Data: ${formatDate(data.doc.date)}`,
-      data.doc.ticket  && `Chamado: ${data.doc.ticket}`,
+    // ── Linha separadora ──
+    const sepY = Math.max(boxY + boxH + 5, titleY + titleLines.length * lineHeight(14) + 4);
+    setColor(PALETTE.ACCENT, 'draw');
+    doc.setLineWidth(0.4);
+    doc.line(ML, sepY, PW - MR, sepY);
+
+    // ── Metadados ──
+    const metaParts = [
+      data.doc.entity && `Entidade: ${data.doc.entity}`,
+      data.doc.module && `Modulo: ${data.doc.module}`,
+      data.doc.author && `Responsavel: ${data.doc.author}`,
+      data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
+      data.doc.ticket && `Chamado: ${data.doc.ticket}`,
     ].filter(Boolean);
 
-    if (entityPart || row2Parts.length) {
-      let metaY = Math.max(titleY + titleLines.length * lineHeight(16) + 4, 36);
-      if (entityPart) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
-        setColor([230, 235, 255], 'text');
-        doc.text(entityPart, xText, metaY);
-        metaY += 6;
-      }
-      if (row2Parts.length) {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
-        setColor([190, 205, 250], 'text');
-        doc.text(row2Parts.join('   |   '), xText, metaY, { maxWidth: CW - 22 });
-      }
+    if (metaParts.length) {
+      const metaY = sepY + 5;
+      setColor(MUTED, 'text');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text(metaParts.join('   |   '), ML, metaY, { maxWidth: CW });
+      y = metaY + 8;
+    } else {
+      y = sepY + 8;
     }
-
-    y = 60;
   }
 
   function drawContinuationHeader() {
@@ -584,21 +583,47 @@ async function buildSectionedDocPDF(data) {
   function drawFooter() {
     if (!data.settings.showFooter && !data.settings.showPageNumbers) return;
 
-    const fy = PH - MB + 5;
-    setColor(BORDER, 'draw');
+    const fy = PH - 20;
+    setColor(PALETTE.ACCENT, 'draw');
     doc.setLineWidth(0.3);
     doc.line(ML, fy, PW - MR, fy);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'normal');
 
     if (data.settings.showFooter) {
+      // Esquerda: endereço
+      setColor(PALETTE.ACCENT, 'text');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.text('Matriz Betha Sistemas', ML, fy + 5);
+
       setColor(MUTED, 'text');
-      doc.text('Betha Sistemas', ML, fy + 5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text('Rua Julio Gaidzinski, 320,', ML, fy + 9.5);
+      doc.text('88811-000, Pio Correa / Criciuma - SC', ML, fy + 13.5);
+
+      // Direita: contato
+      setColor(PALETTE.ACCENT, 'text');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.text('48 3431-0733', PW - MR, fy + 5, { align: 'right' });
+
+      setColor(MUTED, 'text');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text('Atendimento tecnico', PW - MR, fy + 9.5, { align: 'right' });
+
+      setColor(PALETTE.ACCENT, 'text');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.text('0800 600 0735', PW - MR, fy + 13.5, { align: 'right' });
     }
 
     if (data.settings.showPageNumbers) {
       setColor(MUTED, 'text');
-      doc.text(`Página ${page}`, PW - MR, fy + 5, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      const pnY = data.settings.showFooter ? fy + 9.5 : fy + 5;
+      doc.text(`Pagina ${page}`, PW / 2, pnY, { align: 'center' });
     }
   }
 
@@ -721,7 +746,7 @@ async function buildChangelogDocPDF(data) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
-  const PW = 210, PH = 297, ML = 15, MR = 15, MB = 18, CW = PW - ML - MR;
+  const PW = 210, PH = 297, ML = 15, MR = 15, MB = 22, CW = PW - ML - MR;
   const BLUE   = [61, 90, 241];
   const WHITE  = [255, 255, 255];
   const TEXT   = [26, 29, 46];
@@ -764,52 +789,63 @@ async function buildChangelogDocPDF(data) {
   }
 
   function drawMainHeader() {
-    setColor(BLUE, 'fill');
-    doc.rect(0, 0, PW, 52, 'F');
+    // ── Caixa do logo ──
+    const boxX = ML, boxY = 8, boxW = 64, boxH = 22;
+    setColor(BLUE, 'draw');
+    doc.setLineWidth(0.4);
+    doc.rect(boxX, boxY, boxW, boxH);
 
     if (data.settings.showLogo && logoBase64) {
-      doc.addImage(logoBase64, 'PNG', ML, 14, 14, 14);
+      doc.addImage(logoBase64, 'PNG', boxX + 3, boxY + 4, 18, 14);
     }
 
-    const xText = data.settings.showLogo && logoBase64 ? ML + 20 : ML;
+    const sloganX = data.settings.showLogo && logoBase64 ? boxX + 24 : boxX + 4;
+    setColor(BLUE, 'text');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text('Tudo que a sua cidade', sloganX, boxY + 9.5);
+    doc.text('pode se tornar', sloganX, boxY + 14.5);
 
-    setColor([200, 210, 255], 'text');
-    doc.setFont('helvetica', 'bold');
+    // ── Tipo + título ──
+    const rX = boxX + boxW + 6;
+    const rW = PW - MR - rX;
+
+    setColor(MUTED, 'text');
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
-    doc.text('REGISTRO DE ALTERAÇÕES', xText, 13);
+    doc.text('REGISTRO DE ALTERAÇÕES', rX, boxY + 6);
 
-    setColor(WHITE, 'text');
+    setColor([20, 30, 70], 'text');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(15);
-    const titleLines = wrappedLines(data.doc.title || 'Documento', CW - 22, 15);
-    doc.text(titleLines, xText, 21);
+    doc.setFontSize(14);
+    const titleLines = wrappedLines(data.doc.title || 'Documento', rW, 14);
+    doc.text(titleLines, rX, boxY + 14);
 
-    const entityPart = data.doc.entity ? `Entidade: ${data.doc.entity}` : null;
-    const row2Parts  = [
-      data.doc.module  && `Módulo: ${data.doc.module}`,
-      data.doc.author  && `Responsável: ${data.doc.author}`,
-      data.doc.date    && `Data: ${formatDate(data.doc.date)}`,
-      data.doc.ticket  && `Chamado: ${data.doc.ticket}`,
+    // ── Separador ──
+    const sepY = Math.max(boxY + boxH + 5, boxY + 14 + titleLines.length * lineHeight(14) + 4);
+    setColor(BLUE, 'draw');
+    doc.setLineWidth(0.4);
+    doc.line(ML, sepY, PW - MR, sepY);
+
+    // ── Metadados ──
+    const metaParts = [
+      data.doc.entity && `Entidade: ${data.doc.entity}`,
+      data.doc.module && `Modulo: ${data.doc.module}`,
+      data.doc.author && `Responsavel: ${data.doc.author}`,
+      data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
+      data.doc.ticket && `Chamado: ${data.doc.ticket}`,
     ].filter(Boolean);
 
-    if (entityPart || row2Parts.length) {
-      let metaY = Math.max(21 + titleLines.length * lineHeight(15) + 4, 36);
-      if (entityPart) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
-        setColor([230, 235, 255], 'text');
-        doc.text(entityPart, xText, metaY);
-        metaY += 6;
-      }
-      if (row2Parts.length) {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
-        setColor([190, 205, 250], 'text');
-        doc.text(row2Parts.join('   |   '), xText, metaY, { maxWidth: CW - 22 });
-      }
+    if (metaParts.length) {
+      const metaY = sepY + 5;
+      setColor(MUTED, 'text');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text(metaParts.join('   |   '), ML, metaY, { maxWidth: CW });
+      y = metaY + 8;
+    } else {
+      y = sepY + 8;
     }
-
-    y = 60;
   }
 
   function drawContinuationHeader() {
@@ -831,19 +867,45 @@ async function buildChangelogDocPDF(data) {
 
   function drawFooter() {
     if (!data.settings.showFooter && !data.settings.showPageNumbers) return;
-    const fy = PH - MB + 5;
-    setColor(BORDER, 'draw');
+    const fy = PH - 20;
+    setColor(BLUE, 'draw');
     doc.setLineWidth(0.3);
     doc.line(ML, fy, PW - MR, fy);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'normal');
+
     if (data.settings.showFooter) {
+      setColor(BLUE, 'text');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.text('Matriz Betha Sistemas', ML, fy + 5);
+
       setColor(MUTED, 'text');
-      doc.text('Betha Sistemas', ML, fy + 5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text('Rua Julio Gaidzinski, 320,', ML, fy + 9.5);
+      doc.text('88811-000, Pio Correa / Criciuma - SC', ML, fy + 13.5);
+
+      setColor(BLUE, 'text');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.text('48 3431-0733', PW - MR, fy + 5, { align: 'right' });
+
+      setColor(MUTED, 'text');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text('Atendimento tecnico', PW - MR, fy + 9.5, { align: 'right' });
+
+      setColor(BLUE, 'text');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.text('0800 600 0735', PW - MR, fy + 13.5, { align: 'right' });
     }
+
     if (data.settings.showPageNumbers) {
       setColor(MUTED, 'text');
-      doc.text(`Página ${page}`, PW - MR, fy + 5, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      const pnY = data.settings.showFooter ? fy + 9.5 : fy + 5;
+      doc.text(`Pagina ${page}`, PW / 2, pnY, { align: 'center' });
     }
   }
 
@@ -873,7 +935,7 @@ async function buildChangelogDocPDF(data) {
   }
 
   const TYPE_CFG = {
-    addition:    { bg: [209, 250, 229], text: [6, 95, 70],   label: 'Adição' },
+    addition:    { bg: [209, 250, 229], text: [6, 95, 70],   label: 'Criação' },
     fix:         { bg: [219, 234, 254], text: [30, 64, 175], label: 'Correção' },
     change:      { bg: [254, 243, 199], text: [146, 64, 14], label: 'Alteração' },
     removal:     { bg: [254, 226, 226], text: [153, 27, 27], label: 'Remoção' },
@@ -894,8 +956,7 @@ async function buildChangelogDocPDF(data) {
     const descH     = descLines.length * lineHeight(9);
 
     const contentH = titleH + (descH > 0 ? 3 + descH : 0);
-    const dateColH = lineHeight(8.5) + 3 + 6;  // data + gap + badge
-    const rowH     = Math.max(dateColH + 6, contentH + 8);
+    const rowH     = Math.max(16, contentH + 8);
 
     ensureSpace(rowH + 1);
 
@@ -912,20 +973,11 @@ async function buildChangelogDocPDF(data) {
 
     const startY = y + 5;
 
-    // ── Coluna TIPO DE OPERAÇÃO ───────────────
-    const dateColCx = COL.date.x + COL.date.w / 2;
-
-    // Data centralizada
-    setColor(MUTED, 'text');
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.text(entry.date ? formatDate(entry.date) : '—', dateColCx, startY, { align: 'center' });
-
-    // Badge centralizado logo abaixo da data
+    // ── Coluna TIPO DE OPERAÇÃO (badge centralizado verticalmente) ──
     const cfg    = TYPE_CFG[entry.type] || TYPE_CFG['change'];
-    const badgeY = startY + lineHeight(8.5) + 1.5;
     const labelW = cfg.label.length * 1.85 + 5;
     const badgeX = COL.date.x + (COL.date.w - labelW) / 2;
+    const badgeY = y + (rowH - 5.5) / 2;
     setColor(cfg.bg, 'fill');
     doc.roundedRect(badgeX, badgeY, labelW, 5.5, 1.5, 1.5, 'F');
     setColor(cfg.text, 'text');
@@ -974,4 +1026,497 @@ function showToast(msg, type = '') {
   toast.className = `toast${type ? ' ' + type : ''} show`;
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => { toast.className = 'toast'; }, 3500);
+}
+
+// ── Word: helpers ─────────────────────────
+
+function base64ToUint8Array(base64) {
+  const b64 = base64.includes(',') ? base64.split(',')[1] : base64;
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function getImageDimensions(src) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload  = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => resolve({ width: 400, height: 300 });
+    img.src = src;
+  });
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ── Word: generate ────────────────────────
+
+async function generateWord() {
+  if (!window.docx) {
+    showToast('Biblioteca Word não carregada. Verifique a conexão.', 'error');
+    return;
+  }
+
+  const data = collectData();
+
+  if (!data.doc.title) {
+    showToast('Informe o título do documento antes de gerar o Word.', 'error');
+    document.getElementById('doc-title').focus();
+    return;
+  }
+
+  if (currentDocType === 'changelog') {
+    if (!data.entries || data.entries.length === 0) {
+      showToast('Adicione pelo menos uma entrada de alteração.', 'error');
+      return;
+    }
+  } else {
+    if (!data.sections || data.sections.length === 0) {
+      showToast('Adicione pelo menos uma seção com conteúdo.', 'error');
+      return;
+    }
+  }
+
+  showToast('Gerando Word…');
+
+  try {
+    if (currentDocType === 'changelog') {
+      await buildChangelogDocWord(data);
+    } else {
+      await buildSectionedDocWord(data);
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('Erro ao gerar o Word. Veja o console para detalhes.', 'error');
+  }
+}
+
+// ── Word: footer helper ───────────────────
+
+function makeWordFooter(D, accentHex) {
+  const NONE = { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  return new D.Table({
+    width: { size: 100, type: D.WidthType.PERCENTAGE },
+    borders: {
+      top:     { style: D.BorderStyle.SINGLE, size: 4, color: 'E5E7EB' },
+      bottom:  NONE, left: NONE, right: NONE, insideH: NONE, insideV: NONE,
+    },
+    rows: [new D.TableRow({
+      children: [
+        new D.TableCell({
+          width: { size: 50, type: D.WidthType.PERCENTAGE },
+          borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+          margins: { top: 120 },
+          children: [
+            new D.Paragraph({
+              children: [new D.TextRun({ text: 'Matriz Betha Sistemas', bold: true, size: 16, color: accentHex })],
+              spacing: { after: 40 },
+            }),
+            new D.Paragraph({
+              children: [new D.TextRun({ text: 'Rua Julio Gaidzinski, 320,', size: 14, color: '6B7280' })],
+              spacing: { after: 20 },
+            }),
+            new D.Paragraph({
+              children: [new D.TextRun({ text: '88811-000, Pio Correa / Criciuma - SC', size: 14, color: '6B7280' })],
+            }),
+          ],
+        }),
+        new D.TableCell({
+          width: { size: 50, type: D.WidthType.PERCENTAGE },
+          borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+          margins: { top: 120 },
+          children: [
+            new D.Paragraph({
+              alignment: D.AlignmentType.RIGHT,
+              children: [new D.TextRun({ text: '48 3431-0733', bold: true, size: 16, color: accentHex })],
+              spacing: { after: 40 },
+            }),
+            new D.Paragraph({
+              alignment: D.AlignmentType.RIGHT,
+              children: [new D.TextRun({ text: 'Atendimento tecnico', size: 14, color: '6B7280' })],
+              spacing: { after: 20 },
+            }),
+            new D.Paragraph({
+              alignment: D.AlignmentType.RIGHT,
+              children: [new D.TextRun({ text: '0800 600 0735', bold: true, size: 16, color: accentHex })],
+            }),
+          ],
+        }),
+      ],
+    })],
+  });
+}
+
+// ── Word: header helper ───────────────────
+
+function makeWordHeader(D, accentHex, showLogo) {
+  const NONE = { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const logoCell = [];
+
+  if (showLogo && logoBase64) {
+    try {
+      logoCell.push(new D.Paragraph({
+        children: [new D.ImageRun({ data: base64ToUint8Array(logoBase64), transformation: { width: 68, height: 53 } })],
+        spacing: { after: 40 },
+      }));
+    } catch (e) {}
+  }
+  logoCell.push(
+    new D.Paragraph({ children: [new D.TextRun({ text: 'Tudo que a sua cidade', size: 14, color: accentHex })], spacing: { after: 20 } }),
+    new D.Paragraph({ children: [new D.TextRun({ text: 'pode se tornar', size: 14, color: accentHex })] }),
+  );
+
+  return new D.Table({
+    width: { size: 40, type: D.WidthType.PERCENTAGE },
+    borders: {
+      top:     { style: D.BorderStyle.SINGLE, size: 4, color: accentHex },
+      bottom:  { style: D.BorderStyle.SINGLE, size: 4, color: accentHex },
+      left:    { style: D.BorderStyle.SINGLE, size: 4, color: accentHex },
+      right:   { style: D.BorderStyle.SINGLE, size: 4, color: accentHex },
+      insideH: NONE, insideV: NONE,
+    },
+    rows: [new D.TableRow({
+      children: [new D.TableCell({
+        margins: { top: 80, bottom: 80, left: 120, right: 120 },
+        borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+        children: logoCell,
+      })],
+    })],
+  });
+}
+
+// ── Word: Guide + Technical ───────────────
+
+async function buildSectionedDocWord(data) {
+  const D = window.docx;
+  const isTech  = data.doc.type === 'technical';
+  const ACCENT  = isTech ? '0EA5E9' : '3D5AF1';
+  const TYPE_LBL = isTech
+    ? 'DOCUMENTAÇÃO TÉCNICA • BETHA SISTEMAS'
+    : 'GUIA PASSO A PASSO • BETHA SISTEMAS';
+
+  const ALERTS = isTech ? {
+    info:    { fill: 'F0FDF9', border: '0D9488', label: 'NOTA' },
+    warning: { fill: 'FFFBEB', border: 'D97706', label: 'AVISO' },
+    danger:  { fill: 'FFF7F0', border: 'EA580C', label: 'IMPORTANTE' },
+  } : {
+    info:    { fill: 'EFF6FF', border: '2563EB', label: 'DICA' },
+    warning: { fill: 'FFFBEB', border: 'D97706', label: 'ATENCAO' },
+    danger:  { fill: 'FFF5F5', border: 'DC2626', label: 'CRITICO' },
+  };
+
+  const NONE = { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+
+  function makeMetaTable(items) {
+    if (!items.length) return [];
+    return [
+      new D.Table({
+        width: { size: 100, type: D.WidthType.PERCENTAGE },
+        borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideH: NONE, insideV: NONE },
+        rows: [new D.TableRow({
+          children: [new D.TableCell({
+            shading: { fill: 'F8FAFC', type: D.ShadingType.CLEAR, color: 'auto' },
+            borders: { top: { style: D.BorderStyle.SINGLE, size: 4, color: ACCENT, space: 1 }, bottom: NONE, left: NONE, right: NONE },
+            margins: { top: 80, bottom: 80, left: 120, right: 120 },
+            children: items.map(item => new D.Paragraph({
+              children: [new D.TextRun({ text: item, size: 18, color: '374151' })],
+              spacing: { before: 40, after: 40 },
+            })),
+          })],
+        })],
+      }),
+      new D.Paragraph({ spacing: { after: 320 }, children: [] }),
+    ];
+  }
+
+  function makeAlertTable(alertType, alertText) {
+    const cfg = ALERTS[alertType];
+    if (!cfg) return [];
+    return [
+      new D.Table({
+        width: { size: 100, type: D.WidthType.PERCENTAGE },
+        borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideH: NONE, insideV: NONE },
+        rows: [new D.TableRow({
+          children: [
+            new D.TableCell({
+              width: { size: 3, type: D.WidthType.PERCENTAGE },
+              shading: { fill: cfg.border, type: D.ShadingType.CLEAR, color: 'auto' },
+              borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+              children: [new D.Paragraph({ children: [] })],
+            }),
+            new D.TableCell({
+              width: { size: 97, type: D.WidthType.PERCENTAGE },
+              shading: { fill: cfg.fill, type: D.ShadingType.CLEAR, color: 'auto' },
+              borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+              margins: { top: 60, bottom: 60, left: 120, right: 120 },
+              children: [new D.Paragraph({
+                children: [
+                  new D.TextRun({ text: `${cfg.label}  `, bold: true, size: 17, color: cfg.border }),
+                  new D.TextRun({ text: alertText, size: 17, color: '4B5563' }),
+                ],
+              })],
+            }),
+          ],
+        })],
+      }),
+      new D.Paragraph({ spacing: { after: 80 }, children: [] }),
+    ];
+  }
+
+  const children = [];
+
+  // Header: logo box + slogan
+  children.push(makeWordHeader(D, ACCENT, data.settings.showLogo));
+  children.push(new D.Paragraph({ spacing: { after: 160 }, children: [] }));
+
+  // Tipo do documento
+  children.push(new D.Paragraph({
+    children: [new D.TextRun({ text: TYPE_LBL, size: 16, color: '6B7280' })],
+    spacing: { after: 80 },
+  }));
+
+  // Título
+  children.push(new D.Paragraph({
+    children: [new D.TextRun({ text: data.doc.title || 'Documento', bold: true, size: 52, color: ACCENT })],
+    spacing: { after: 240 },
+  }));
+
+  // Separador
+  children.push(new D.Paragraph({
+    border: { bottom: { style: D.BorderStyle.SINGLE, size: 8, color: ACCENT, space: 1 } },
+    spacing: { after: 200 },
+    children: [],
+  }));
+
+  // Metadados
+  const metaItems = [
+    data.doc.entity && `Entidade: ${data.doc.entity}`,
+    data.doc.module && `Modulo: ${data.doc.module}`,
+    data.doc.author && `Responsavel: ${data.doc.author}`,
+    data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
+    data.doc.ticket && `Chamado: ${data.doc.ticket}`,
+  ].filter(Boolean);
+  children.push(...makeMetaTable(metaItems));
+
+  // Seções
+  for (const [sIdx, section] of data.sections.entries()) {
+    children.push(new D.Paragraph({
+      border: { left: { style: D.BorderStyle.THICK, size: 14, color: ACCENT, space: 4 } },
+      spacing: { before: 360, after: 160 },
+      children: [
+        new D.TextRun({
+          text: `  ${sIdx + 1}. ${(section.title || 'Seção').toUpperCase()}`,
+          bold: true, size: 26, color: ACCENT,
+        }),
+      ],
+    }));
+
+    for (const [stIdx, step] of section.steps.entries()) {
+      if (!step.text && !step.image) continue;
+
+      if (step.text) {
+        children.push(new D.Paragraph({
+          spacing: { before: 100, after: 80 },
+          children: [
+            new D.TextRun({ text: `${stIdx + 1}.  `, bold: true, size: 21, color: ACCENT }),
+            new D.TextRun({ text: step.text, size: 21, color: '1A1D2E' }),
+          ],
+        }));
+      }
+
+      if (step.alertType && step.alertText) {
+        children.push(...makeAlertTable(step.alertType, step.alertText));
+      }
+
+      if (step.image) {
+        try {
+          const imgData = base64ToUint8Array(step.image);
+          const dims    = await getImageDimensions(step.image);
+          const maxW    = 550;
+          const scale   = Math.min(1, maxW / dims.width);
+          const w = Math.round(dims.width * scale);
+          const h = Math.round(dims.height * scale);
+          children.push(new D.Paragraph({
+            spacing: { before: 80, after: 80 },
+            children: [new D.ImageRun({ data: imgData, transformation: { width: w, height: h } })],
+          }));
+        } catch (e) {
+          console.warn('Imagem não incluída no Word:', e);
+        }
+      }
+    }
+    children.push(new D.Paragraph({ spacing: { after: 80 }, children: [] }));
+  }
+
+  // Rodapé
+  if (data.settings.showFooter) {
+    children.push(new D.Paragraph({ spacing: { before: 480 }, children: [] }));
+    children.push(makeWordFooter(D, ACCENT));
+  }
+
+  const wordDoc = new D.Document({ sections: [{ properties: {}, children }] });
+  const blob    = await D.Packer.toBlob(wordDoc);
+  downloadBlob(blob, `${pdfFilename(data.doc.title)}.docx`);
+  showToast('Word gerado com sucesso!', 'success');
+}
+
+// ── Word: Changelog ───────────────────────
+
+async function buildChangelogDocWord(data) {
+  const D    = window.docx;
+  const BLUE = '3D5AF1';
+
+  const TYPE_CFG = {
+    addition:    { fill: 'D1FAE5', text: '065F46', label: 'Criação' },
+    fix:         { fill: 'DBEAFE', text: '1E40AF', label: 'Correção' },
+    change:      { fill: 'FEF3C7', text: '92400E', label: 'Alteração' },
+    removal:     { fill: 'FEE2E2', text: '991B1B', label: 'Remoção' },
+    improvement: { fill: 'EDE9FE', text: '5B21B6', label: 'Melhoria' },
+    security:    { fill: 'F3F4F6', text: '374151', label: 'Segurança' },
+  };
+
+  const NONE = { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const BDR  = { style: D.BorderStyle.SINGLE, size: 4, color: 'E5E7EB' };
+
+  const children = [];
+
+  // Header: logo box + slogan
+  children.push(makeWordHeader(D, BLUE, data.settings.showLogo));
+  children.push(new D.Paragraph({ spacing: { after: 160 }, children: [] }));
+
+  // Tipo + título
+  children.push(new D.Paragraph({
+    children: [new D.TextRun({ text: 'REGISTRO DE ALTERAÇÕES • BETHA SISTEMAS', size: 16, color: '6B7280' })],
+    spacing: { after: 80 },
+  }));
+
+  children.push(new D.Paragraph({
+    children: [new D.TextRun({ text: data.doc.title || 'Documento', bold: true, size: 52, color: '1A1D2E' })],
+    spacing: { after: 240 },
+  }));
+
+  children.push(new D.Paragraph({
+    border: { bottom: { style: D.BorderStyle.SINGLE, size: 8, color: BLUE, space: 1 } },
+    spacing: { after: 200 },
+    children: [],
+  }));
+
+  // Metadados
+  const metaItems = [
+    data.doc.entity && `Entidade: ${data.doc.entity}`,
+    data.doc.module && `Modulo: ${data.doc.module}`,
+    data.doc.author && `Responsavel: ${data.doc.author}`,
+    data.doc.date   && `Data: ${formatDate(data.doc.date)}`,
+    data.doc.ticket && `Chamado: ${data.doc.ticket}`,
+  ].filter(Boolean);
+
+  if (metaItems.length) {
+    children.push(new D.Table({
+      width: { size: 100, type: D.WidthType.PERCENTAGE },
+      borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideH: NONE, insideV: NONE },
+      rows: [new D.TableRow({
+        children: [new D.TableCell({
+          shading: { fill: 'F8FAFC', type: D.ShadingType.CLEAR, color: 'auto' },
+          borders: { top: { style: D.BorderStyle.SINGLE, size: 4, color: BLUE, space: 1 }, bottom: NONE, left: NONE, right: NONE },
+          margins: { top: 80, bottom: 80, left: 120, right: 120 },
+          children: metaItems.map(item => new D.Paragraph({
+            children: [new D.TextRun({ text: item, size: 18, color: '374151' })],
+            spacing: { before: 40, after: 40 },
+          })),
+        })],
+      })],
+    }));
+    children.push(new D.Paragraph({ spacing: { after: 320 }, children: [] }));
+  }
+
+  // Tabela
+  const tableRows = [];
+
+  tableRows.push(new D.TableRow({
+    tableHeader: true,
+    children: [
+      new D.TableCell({
+        width: { size: 25, type: D.WidthType.PERCENTAGE },
+        shading: { fill: BLUE, type: D.ShadingType.CLEAR, color: 'auto' },
+        borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+        margins: { top: 80, bottom: 80, left: 120, right: 120 },
+        children: [new D.Paragraph({
+          alignment: D.AlignmentType.CENTER,
+          children: [new D.TextRun({ text: 'TIPO DE OPERAÇÃO', bold: true, size: 18, color: 'FFFFFF' })],
+        })],
+      }),
+      new D.TableCell({
+        width: { size: 75, type: D.WidthType.PERCENTAGE },
+        shading: { fill: BLUE, type: D.ShadingType.CLEAR, color: 'auto' },
+        borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+        margins: { top: 80, bottom: 80, left: 120, right: 120 },
+        children: [new D.Paragraph({
+          children: [new D.TextRun({ text: 'DESCRIÇÃO', bold: true, size: 18, color: 'FFFFFF' })],
+        })],
+      }),
+    ],
+  }));
+
+  data.entries.forEach((entry, i) => {
+    const cfg     = TYPE_CFG[entry.type] || TYPE_CFG.change;
+    const altFill = i % 2 === 1 ? 'F8FAFC' : 'FFFFFF';
+
+    tableRows.push(new D.TableRow({
+      children: [
+        new D.TableCell({
+          width: { size: 25, type: D.WidthType.PERCENTAGE },
+          shading: { fill: altFill, type: D.ShadingType.CLEAR, color: 'auto' },
+          borders: { top: BDR, bottom: BDR, left: BDR, right: BDR },
+          margins: { top: 80, bottom: 80, left: 120, right: 120 },
+          children: [
+            new D.Paragraph({
+              alignment: D.AlignmentType.CENTER,
+              children: [new D.TextRun({ text: `● ${cfg.label}`, bold: true, size: 17, color: cfg.text })],
+            }),
+          ],
+        }),
+        new D.TableCell({
+          width: { size: 75, type: D.WidthType.PERCENTAGE },
+          shading: { fill: altFill, type: D.ShadingType.CLEAR, color: 'auto' },
+          borders: { top: BDR, bottom: BDR, left: BDR, right: BDR },
+          margins: { top: 80, bottom: 80, left: 120, right: 120 },
+          children: [
+            new D.Paragraph({
+              children: [new D.TextRun({ text: entry.title || '—', bold: true, size: 20, color: '1A1D2E' })],
+              spacing: { after: 80 },
+            }),
+            ...(entry.desc ? [new D.Paragraph({
+              children: [new D.TextRun({ text: entry.desc, size: 18, color: '374151' })],
+            })] : []),
+          ],
+        }),
+      ],
+    }));
+  });
+
+  children.push(new D.Table({
+    width: { size: 100, type: D.WidthType.PERCENTAGE },
+    borders: { top: BDR, bottom: BDR, left: BDR, right: BDR, insideH: BDR, insideV: BDR },
+    rows: tableRows,
+  }));
+
+  // Rodapé
+  if (data.settings.showFooter) {
+    children.push(new D.Paragraph({ spacing: { before: 480 }, children: [] }));
+    children.push(makeWordFooter(D, BLUE));
+  }
+
+  const wordDoc = new D.Document({ sections: [{ properties: {}, children }] });
+  const blob    = await D.Packer.toBlob(wordDoc);
+  downloadBlob(blob, `registro-${pdfFilename(data.doc.title)}.docx`);
+  showToast('Word gerado com sucesso!', 'success');
 }
