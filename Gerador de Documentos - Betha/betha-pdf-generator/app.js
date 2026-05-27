@@ -501,43 +501,44 @@ async function buildSectionedDocPDF(data) {
   }
 
   function drawMainHeader() {
-    // ── Caixa do logo (bordada, fundo branco) ──
-    const boxX = ML, boxY = 8, boxW = 64, boxH = 22;
-    setColor(PALETTE.ACCENT, 'draw');
-    doc.setLineWidth(0.4);
-    doc.rect(boxX, boxY, boxW, boxH);
+    const logoY = 8;
 
-    if (data.settings.showLogo && logoBase64) {
-      doc.addImage(logoBase64, 'PNG', boxX + 3, boxY + 4, 18, 14);
+    if (data.settings.showLogo) {
+      // ── Wordmark BETHA (texto, azul fosco, sem contorno) ──
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      setColor([100, 128, 200], 'text');
+      doc.text('BETHA', ML, logoY + 15);
+      const bethaW = doc.getTextWidth('BETHA') + 4;
+
+      // ── Slogan (linhas próximas, 3.5mm gap) ──
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      setColor([148, 165, 215], 'text');
+      doc.text('Tudo que a sua cidade', ML + bethaW, logoY + 10);
+      doc.text('pode se tornar', ML + bethaW, logoY + 13.5);
     }
 
-    const sloganX = data.settings.showLogo && logoBase64 ? boxX + 24 : boxX + 4;
-    setColor(PALETTE.ACCENT, 'text');
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.text('Tudo que a sua cidade', sloganX, boxY + 9.5);
-    doc.text('pode se tornar', sloganX, boxY + 14.5);
-
     // ── Lado direito: tipo + título ──
-    const rX = boxX + boxW + 6;
+    const rX = ML + 70;
     const rW = PW - MR - rX;
 
     if (PALETTE.HEADER_LABEL) {
       setColor(MUTED, 'text');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
-      doc.text(PALETTE.HEADER_LABEL, rX, boxY + 6);
+      doc.text(PALETTE.HEADER_LABEL, rX, logoY + 6);
     }
 
     setColor([20, 30, 70], 'text');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    const titleY = PALETTE.HEADER_LABEL ? boxY + 14 : boxY + 10;
+    const titleY = PALETTE.HEADER_LABEL ? logoY + 14 : logoY + 10;
     const titleLines = wrappedLines(data.doc.title || 'Documento', rW, 14);
     doc.text(titleLines, rX, titleY);
 
     // ── Linha separadora ──
-    const sepY = Math.max(boxY + boxH + 5, titleY + titleLines.length * lineHeight(14) + 4);
+    const sepY = Math.max(logoY + 27, titleY + titleLines.length * lineHeight(14) + 4);
     setColor(PALETTE.ACCENT, 'draw');
     doc.setLineWidth(0.4);
     doc.line(ML, sepY, PW - MR, sepY);
@@ -789,40 +790,41 @@ async function buildChangelogDocPDF(data) {
   }
 
   function drawMainHeader() {
-    // ── Caixa do logo ──
-    const boxX = ML, boxY = 8, boxW = 64, boxH = 22;
-    setColor(BLUE, 'draw');
-    doc.setLineWidth(0.4);
-    doc.rect(boxX, boxY, boxW, boxH);
+    const logoY = 8;
 
-    if (data.settings.showLogo && logoBase64) {
-      doc.addImage(logoBase64, 'PNG', boxX + 3, boxY + 4, 18, 14);
+    if (data.settings.showLogo) {
+      // ── Wordmark BETHA (texto, azul fosco, sem contorno) ──
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      setColor([100, 128, 200], 'text');
+      doc.text('BETHA', ML, logoY + 15);
+      const bethaW = doc.getTextWidth('BETHA') + 4;
+
+      // ── Slogan (linhas próximas, 3.5mm gap) ──
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      setColor([148, 165, 215], 'text');
+      doc.text('Tudo que a sua cidade', ML + bethaW, logoY + 10);
+      doc.text('pode se tornar', ML + bethaW, logoY + 13.5);
     }
 
-    const sloganX = data.settings.showLogo && logoBase64 ? boxX + 24 : boxX + 4;
-    setColor(BLUE, 'text');
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.text('Tudo que a sua cidade', sloganX, boxY + 9.5);
-    doc.text('pode se tornar', sloganX, boxY + 14.5);
-
     // ── Tipo + título ──
-    const rX = boxX + boxW + 6;
+    const rX = ML + 70;
     const rW = PW - MR - rX;
 
     setColor(MUTED, 'text');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
-    doc.text('REGISTRO DE ALTERAÇÕES', rX, boxY + 6);
+    doc.text('REGISTRO DE ALTERAÇÕES', rX, logoY + 6);
 
     setColor([20, 30, 70], 'text');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
     const titleLines = wrappedLines(data.doc.title || 'Documento', rW, 14);
-    doc.text(titleLines, rX, boxY + 14);
+    doc.text(titleLines, rX, logoY + 14);
 
     // ── Separador ──
-    const sepY = Math.max(boxY + boxH + 5, boxY + 14 + titleLines.length * lineHeight(14) + 4);
+    const sepY = Math.max(logoY + 27, logoY + 14 + titleLines.length * lineHeight(14) + 4);
     setColor(BLUE, 'draw');
     doc.setLineWidth(0.4);
     doc.line(ML, sepY, PW - MR, sepY);
@@ -1159,38 +1161,13 @@ function makeWordFooter(D, accentHex) {
 // ── Word: header helper ───────────────────
 
 function makeWordHeader(D, accentHex, showLogo) {
-  const NONE = { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
-  const logoCell = [];
-
-  if (showLogo && logoBase64) {
-    try {
-      logoCell.push(new D.Paragraph({
-        children: [new D.ImageRun({ data: base64ToUint8Array(logoBase64), transformation: { width: 68, height: 53 } })],
-        spacing: { after: 40 },
-      }));
-    } catch (e) {}
-  }
-  logoCell.push(
-    new D.Paragraph({ children: [new D.TextRun({ text: 'Tudo que a sua cidade', size: 14, color: accentHex })], spacing: { after: 20 } }),
-    new D.Paragraph({ children: [new D.TextRun({ text: 'pode se tornar', size: 14, color: accentHex })] }),
-  );
-
-  return new D.Table({
-    width: { size: 40, type: D.WidthType.PERCENTAGE },
-    borders: {
-      top:     { style: D.BorderStyle.SINGLE, size: 4, color: accentHex },
-      bottom:  { style: D.BorderStyle.SINGLE, size: 4, color: accentHex },
-      left:    { style: D.BorderStyle.SINGLE, size: 4, color: accentHex },
-      right:   { style: D.BorderStyle.SINGLE, size: 4, color: accentHex },
-      insideH: NONE, insideV: NONE,
-    },
-    rows: [new D.TableRow({
-      children: [new D.TableCell({
-        margins: { top: 80, bottom: 80, left: 120, right: 120 },
-        borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
-        children: logoCell,
-      })],
-    })],
+  if (!showLogo) return null;
+  return new D.Paragraph({
+    spacing: { after: 120 },
+    children: [
+      new D.TextRun({ text: 'BETHA  ', bold: true, size: 38, color: '6482C8' }),
+      new D.TextRun({ text: 'Tudo que a sua cidade  •  pode se tornar', size: 14, color: '94A7DA' }),
+    ],
   });
 }
 
@@ -1274,9 +1251,9 @@ async function buildSectionedDocWord(data) {
 
   const children = [];
 
-  // Header: logo box + slogan
-  children.push(makeWordHeader(D, ACCENT, data.settings.showLogo));
-  children.push(new D.Paragraph({ spacing: { after: 160 }, children: [] }));
+  // Header: wordmark BETHA + slogan
+  const _hdr1 = makeWordHeader(D, ACCENT, data.settings.showLogo);
+  if (_hdr1) { children.push(_hdr1); children.push(new D.Paragraph({ spacing: { after: 160 }, children: [] })); }
 
   // Tipo do documento
   children.push(new D.Paragraph({
@@ -1389,9 +1366,9 @@ async function buildChangelogDocWord(data) {
 
   const children = [];
 
-  // Header: logo box + slogan
-  children.push(makeWordHeader(D, BLUE, data.settings.showLogo));
-  children.push(new D.Paragraph({ spacing: { after: 160 }, children: [] }));
+  // Header: wordmark BETHA + slogan
+  const _hdr2 = makeWordHeader(D, BLUE, data.settings.showLogo);
+  if (_hdr2) { children.push(_hdr2); children.push(new D.Paragraph({ spacing: { after: 160 }, children: [] })); }
 
   // Tipo + título
   children.push(new D.Paragraph({
