@@ -744,14 +744,35 @@ function addOpItem(sid) {
   const el = document.createElement('div');
   el.className = 'op-item-row';
   el.innerHTML = `
-    <div class="op-item-bullet"></div>
-    <input type="text" class="op-item-input" placeholder="Descreva o item ajustado...">
-    <button class="btn-icon danger btn-remove-op-item" title="Remover item">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
+    <div class="op-item-main">
+      <div class="op-item-bullet"></div>
+      <input type="text" class="op-item-input" placeholder="Descreva o item ajustado...">
+      <div class="op-item-row-actions">
+        <button class="btn-icon btn-add-op-subitem" title="Adicionar subitem">+ Sub</button>
+        <button class="btn-icon danger btn-remove-op-item" title="Remover item">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="op-subitems-wrap"></div>
   `;
   itemsWrap.appendChild(el);
   el.querySelector('.op-item-input').focus();
+}
+
+function addOpSubItem(itemRow) {
+  const subWrap = itemRow.querySelector('.op-subitems-wrap');
+  const el = document.createElement('div');
+  el.className = 'op-subitem-row';
+  el.innerHTML = `
+    <div class="op-subitem-bullet"></div>
+    <input type="text" class="op-subitem-input" placeholder="Subitem...">
+    <button class="btn-icon danger btn-remove-op-subitem" title="Remover subitem">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  `;
+  subWrap.appendChild(el);
+  el.querySelector('.op-subitem-input').focus();
 }
 
 function handleOpContainerClick(e) {
@@ -766,6 +787,14 @@ function handleOpContainerClick(e) {
   }
   if (t.closest('.btn-add-op-item')) {
     addOpItem(t.closest('.op-section-block').dataset.sid);
+    return;
+  }
+  if (t.closest('.btn-add-op-subitem')) {
+    addOpSubItem(t.closest('.op-item-row'));
+    return;
+  }
+  if (t.closest('.btn-remove-op-subitem')) {
+    t.closest('.op-subitem-row').remove();
     return;
   }
   if (t.closest('.btn-remove-op-item')) {
@@ -809,8 +838,14 @@ function collectData() {
     const opSections = [];
     document.querySelectorAll('.op-section-block').forEach(secEl => {
       const items = [];
-      secEl.querySelectorAll('.op-item-input').forEach(inp => {
-        if (inp.value.trim()) items.push(inp.value.trim());
+      secEl.querySelectorAll('.op-item-row').forEach(itemRow => {
+        const text = itemRow.querySelector('.op-item-input').value.trim();
+        if (!text) return;
+        const subItems = [];
+        itemRow.querySelectorAll('.op-subitem-input').forEach(sub => {
+          if (sub.value.trim()) subItems.push(sub.value.trim());
+        });
+        items.push({ text, subItems });
       });
       opSections.push({
         title: secEl.querySelector('.op-section-title-input').value.trim(),
@@ -1650,7 +1685,11 @@ async function buildOperationalDocPDF(data) {
 
     section.items.forEach(item => {
       if (!item) return;
-      const lines = ctx.wrappedLines(item, CW - 9, 10);
+      const itemText = typeof item === 'string' ? item : item.text;
+      const subItems = typeof item === 'string' ? [] : (item.subItems || []);
+      if (!itemText) return;
+
+      const lines = ctx.wrappedLines(itemText, CW - 9, 10);
       const h = lines.length * ctx.lineHeight(10);
       ensureSpace(h + 5);
       ctx.setColor(ACCENT, 'fill');
@@ -1660,6 +1699,20 @@ async function buildOperationalDocPDF(data) {
       doc.setFontSize(10);
       doc.text(lines, ML + 6, y + 3.8);
       y += h + 3.5;
+
+      subItems.forEach(subItem => {
+        if (!subItem) return;
+        const subLines = ctx.wrappedLines(subItem, CW - 19, 9.5);
+        const subH = subLines.length * ctx.lineHeight(9.5);
+        ensureSpace(subH + 4);
+        ctx.setColor([150, 160, 180], 'fill');
+        doc.circle(ML + 10, y + 2.2, 0.9, 'F');
+        ctx.setColor([55, 65, 81], 'text');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.text(subLines, ML + 14, y + 3.5);
+        y += subH + 3;
+      });
     });
     y += 5;
   }
@@ -1677,51 +1730,36 @@ async function buildOperationalDocPDF(data) {
     y += 12;
 
     const segs  = parseRichHTMLSegments(html);
-    const lines = buildRichLines(doc, segs, CW - 12, 10);
-    const boxH  = lines.length * ctx.lineHeight(10) + 14;
-    ensureSpace(boxH + 4);
-
-    ctx.setColor([248, 250, 252], 'fill');
-    doc.roundedRect(ML, y, CW, boxH, 2.5, 2.5, 'F');
-    ctx.setColor(ACCENT, 'draw');
-    doc.setLineWidth(0.4);
-    doc.roundedRect(ML, y, CW, boxH, 2.5, 2.5, 'S');
-    ctx.setColor(ACCENT, 'fill');
-    doc.roundedRect(ML, y, 3.5, boxH, 1.5, 1.5, 'F');
+    const lines = buildRichLines(doc, segs, CW, 10);
+    const textH = lines.length * ctx.lineHeight(10);
+    ensureSpace(textH + 6);
 
     ctx.setColor(TEXT, 'text');
-    drawRichLines(doc, lines, ML + 8, y + 9, 10);
-    y += boxH + 10;
+    drawRichLines(doc, lines, ML, y + 4, 10);
+    y += textH + 12;
   }
 
   function drawSignatures(signatures) {
     const lineW  = 74;
     const leftX  = ML + 6;
     const rightX = PW - MR - lineW - 6;
-    const boxH   = 38;
 
-    ensureSpace(boxH + 12);
-    y += 6;
-
-    ctx.setColor([248, 250, 252], 'fill');
-    doc.roundedRect(ML, y, CW, boxH, 2.5, 2.5, 'F');
-    ctx.setColor(BORDER, 'draw');
-    doc.setLineWidth(0.3);
-    doc.roundedRect(ML, y, CW, boxH, 2.5, 2.5, 'S');
+    ensureSpace(46);
+    y += 8;
 
     ctx.setColor([148, 158, 178], 'draw');
     doc.setLineWidth(0.5);
-    doc.line(leftX,  y + 22, leftX  + lineW, y + 22);
-    doc.line(rightX, y + 22, rightX + lineW, y + 22);
+    doc.line(leftX,  y + 16, leftX  + lineW, y + 16);
+    doc.line(rightX, y + 16, rightX + lineW, y + 16);
 
     ctx.setColor(MUTED, 'text');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     if (signatures.name1) {
-      doc.text(ctx.safeText(signatures.name1), leftX + lineW / 2, y + 27.5, { align: 'center' });
+      doc.text(ctx.safeText(signatures.name1), leftX + lineW / 2, y + 21.5, { align: 'center' });
     }
     if (signatures.name2) {
-      doc.text(ctx.safeText(signatures.name2), rightX + lineW / 2, y + 27.5, { align: 'center' });
+      doc.text(ctx.safeText(signatures.name2), rightX + lineW / 2, y + 21.5, { align: 'center' });
     }
 
     const cityDate = [
@@ -1730,9 +1768,9 @@ async function buildOperationalDocPDF(data) {
     ].filter(Boolean).join(', ');
     if (cityDate) {
       doc.setFontSize(8);
-      doc.text(cityDate, PW / 2, y + 34, { align: 'center' });
+      doc.text(cityDate, PW / 2, y + 30, { align: 'center' });
     }
-    y += boxH + 8;
+    y += 36;
   }
 
   y = drawPDFSharedHeader(doc, data, ACCENT, reg.label);
@@ -1787,16 +1825,27 @@ async function buildOperationalDocWord(data) {
     }));
     section.items.forEach(item => {
       if (!item) return;
+      const itemText = typeof item === 'string' ? item : item.text;
+      const subItems = typeof item === 'string' ? [] : (item.subItems || []);
+      if (!itemText) return;
       children.push(new D.Paragraph({
         bullet: { level: 0 },
         spacing: { before: 60, after: 60 },
-        children: [new D.TextRun({ text: item, size: 21, color: '1A1D2E' })],
+        children: [new D.TextRun({ text: itemText, size: 21, color: '1A1D2E' })],
       }));
+      subItems.forEach(subItem => {
+        if (!subItem) return;
+        children.push(new D.Paragraph({
+          bullet: { level: 1 },
+          spacing: { before: 40, after: 40 },
+          children: [new D.TextRun({ text: subItem, size: 20, color: '374151' })],
+        }));
+      });
     });
     children.push(new D.Paragraph({ spacing: { after: 80 }, children: [] }));
   });
 
-  // Conclusão
+  // Conclusão (sem caixa — apenas texto)
   const conclusionPlain = richHTMLToPlain(data.conclusion || '').trim();
   if (conclusionPlain) {
     children.push(new D.Paragraph({
@@ -1804,28 +1853,17 @@ async function buildOperationalDocWord(data) {
       spacing: { before: 360, after: 200 },
       children: [new D.TextRun({ text: '  CONCLUSÃO', bold: true, size: 24, color: BLUE })],
     }));
-    children.push(new D.Table({
-      width: { size: 100, type: D.WidthType.PERCENTAGE },
-      borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideH: NONE, insideV: NONE },
-      rows: [new D.TableRow({
-        children: [new D.TableCell({
-          shading: { fill: 'F8FAFC', type: D.ShadingType.CLEAR, color: 'auto' },
-          borders: { top: BDR_BLUE, bottom: BDR_BLUE, left: BDR_BLUE, right: BDR_BLUE },
-          margins: { top: 120, bottom: 120, left: 200, right: 200 },
-          children: [new D.Paragraph({
-            children: htmlToWordRuns(D, data.conclusion, { size: 21, color: '1A1D2E' }),
-            spacing: { before: 40, after: 40 },
-          })],
-        })],
-      })],
+    children.push(new D.Paragraph({
+      children: htmlToWordRuns(D, data.conclusion, { size: 21, color: '1A1D2E' }),
+      spacing: { before: 40, after: 320 },
     }));
-    children.push(new D.Paragraph({ spacing: { after: 320 }, children: [] }));
   }
 
-  // Assinaturas
+  // Assinaturas (sem caixa — apenas linhas e nomes)
   const { name1, name2, city } = data.signatures;
   if (name1 || name2 || city) {
     children.push(new D.Paragraph({ spacing: { before: 600 }, children: [] }));
+    const SIG_BDR = { style: D.BorderStyle.SINGLE, size: 6, color: '9CA3AF', space: 1 };
     children.push(new D.Table({
       width: { size: 100, type: D.WidthType.PERCENTAGE },
       borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideH: NONE, insideV: NONE },
@@ -1834,7 +1872,7 @@ async function buildOperationalDocWord(data) {
           children: [
             new D.TableCell({
               width: { size: 45, type: D.WidthType.PERCENTAGE },
-              borders: { top: NONE, left: NONE, right: NONE, bottom: { style: D.BorderStyle.SINGLE, size: 6, color: '6B7280', space: 1 } },
+              borders: { top: NONE, left: NONE, right: NONE, bottom: SIG_BDR },
               margins: { bottom: 80, left: 60, right: 60 },
               children: [new D.Paragraph({ children: [] })],
             }),
@@ -1845,7 +1883,7 @@ async function buildOperationalDocWord(data) {
             }),
             new D.TableCell({
               width: { size: 45, type: D.WidthType.PERCENTAGE },
-              borders: { top: NONE, left: NONE, right: NONE, bottom: { style: D.BorderStyle.SINGLE, size: 6, color: '6B7280', space: 1 } },
+              borders: { top: NONE, left: NONE, right: NONE, bottom: SIG_BDR },
               margins: { bottom: 80, left: 60, right: 60 },
               children: [new D.Paragraph({ children: [] })],
             }),

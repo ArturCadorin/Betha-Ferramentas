@@ -1114,9 +1114,22 @@ textarea::placeholder { color: #9CA3AF; }
 
 .op-item-row {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fadeSlideIn .15s ease;
+}
+
+.op-item-main {
+  display: flex;
   align-items: center;
   gap: 8px;
-  animation: fadeSlideIn .15s ease;
+}
+
+.op-item-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .op-item-bullet {
@@ -1133,6 +1146,37 @@ textarea::placeholder { color: #9CA3AF; }
   flex: 1;
   padding: 7px 11px !important;
   font-size: 13px !important;
+}
+
+/* Sub-itens */
+.op-subitems-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-left: 26px;
+}
+
+.op-subitem-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  animation: fadeSlideIn .15s ease;
+}
+
+.op-subitem-bullet {
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+  border: 1.5px solid var(--primary);
+  border-radius: 50%;
+  opacity: .6;
+  flex-shrink: 0;
+}
+
+.op-subitem-input {
+  flex: 1;
+  padding: 5px 10px !important;
+  font-size: 12px !important;
 }
 
 /* ── Card Extras (Conclusão + Assinaturas) ── */
@@ -1315,6 +1359,8 @@ body.dark .btn-darkmode:hover { background: #171C30; border-color: var(--primary
 
 body.dark .site-footer       { background: #11152A; border-color: #252C42; }
 body.dark .op-extras-section + .op-extras-section { border-color: #252C42; }
+body.dark .op-subitem-input  { background: #0D0F1A; border-color: #252C42; color: #D1D5DB; }
+body.dark .op-subitem-bullet { border-color: #586EAC; }
 body.dark .empty-state       { color: #8892A4; }
 
 body.dark ::-webkit-scrollbar       { width: 7px; height: 7px; }
