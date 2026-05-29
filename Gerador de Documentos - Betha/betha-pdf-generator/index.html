@@ -198,24 +198,24 @@
       </div>
       <div class="form-grid">
         <div class="form-group span-2">
-          <label for="doc-title">Título do Documento <span class="required">*</span></label>
-          <input type="text" id="doc-title" placeholder="Ex: Como emitir relatório de folha de pagamento" autocomplete="off">
+          <label>Título do Documento <span class="required">*</span></label>
+          <div id="doc-title" class="rich-textarea" contenteditable="true" data-single-line data-placeholder="Ex: Como emitir relatório de folha de pagamento"></div>
         </div>
         <div class="form-group span-2">
-          <label for="doc-entity">Entidade</label>
-          <input type="text" id="doc-entity" placeholder="Ex: Prefeitura Municipal de Criciúma" autocomplete="off">
+          <label>Entidade</label>
+          <div id="doc-entity" class="rich-textarea" contenteditable="true" data-single-line data-placeholder="Ex: Prefeitura Municipal de Criciúma"></div>
         </div>
         <div class="form-group">
-          <label for="doc-module">Módulo / Sistema</label>
-          <input type="text" id="doc-module" placeholder="Ex: Folha de Pagamento" autocomplete="off">
+          <label>Módulo / Sistema</label>
+          <div id="doc-module" class="rich-textarea" contenteditable="true" data-single-line data-placeholder="Ex: Folha de Pagamento"></div>
         </div>
         <div class="form-group">
-          <label for="doc-ticket">Número do Chamado</label>
-          <input type="text" id="doc-ticket" placeholder="Ex: BTHSC-12345" autocomplete="off">
+          <label>Número do Chamado</label>
+          <div id="doc-ticket" class="rich-textarea" contenteditable="true" data-single-line data-placeholder="Ex: BTHSC-12345"></div>
         </div>
         <div class="form-group">
-          <label for="doc-author">Responsável</label>
-          <input type="text" id="doc-author" placeholder="Ex: Artur Cadorin" autocomplete="off">
+          <label>Responsável</label>
+          <div id="doc-author" class="rich-textarea" contenteditable="true" data-single-line data-placeholder="Ex: Artur Cadorin"></div>
         </div>
         <div class="form-group">
           <label for="doc-date">Data</label>
@@ -334,12 +334,12 @@
         </div>
         <div class="op-sig-grid">
           <div class="form-group">
-            <label for="sig-name1">Assinante 1 – Cliente</label>
-            <input type="text" id="sig-name1" placeholder="Ex: João da Silva" autocomplete="off">
+            <label>Assinante 1 – Cliente</label>
+            <div id="sig-name1" class="rich-textarea" contenteditable="true" data-single-line data-placeholder="Ex: João da Silva"></div>
           </div>
           <div class="form-group">
-            <label for="sig-name2">Assinante 2 – Cliente</label>
-            <input type="text" id="sig-name2" placeholder="Ex: Maria Oliveira" autocomplete="off">
+            <label>Assinante 2 – Cliente</label>
+            <div id="sig-name2" class="rich-textarea" contenteditable="true" data-single-line data-placeholder="Ex: Maria Oliveira"></div>
           </div>
         </div>
       </div>
@@ -363,6 +363,15 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="app.js"></script>
+  <script src="js/rich-text.js"></script>
+  <script src="builders/pdf-shared.js"></script>
+  <script src="builders/pdf-guide.js"></script>
+  <script src="builders/pdf-changelog.js"></script>
+  <script src="builders/pdf-operational.js"></script>
+  <script src="builders/word-builders.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/collect.js"></script>
+  <script src="js/suggestions.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
